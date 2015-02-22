@@ -27,6 +27,10 @@ class Server
         void sendToPeer(sf::Packet& packet, unsigned int peerId);
 
         Settings& getSettings();
+        Output* getOutput();
+
+        void list();
+        void connected();
 
     protected:
         void setListening(bool enable);

@@ -20,6 +20,10 @@ class CommandHandler
     public:
         void handle(std::string const& command);
         void handleStop(Arguments args);
+        void handleList(Arguments args);
+        void handleConnected(Arguments args);
+        void handleSay(Arguments args);
+        void handleHelp(Arguments args);
 
     protected:
         Server* mServer;

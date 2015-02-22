@@ -88,6 +88,31 @@ Settings& Server::getSettings()
     return mSettings;
 }
 
+Output* Server::getOutput()
+{
+    return mOutput;
+}
+
+void Server::list()
+{
+    connected();
+    for (unsigned int i = 0; i < mConnectedPlayers; i++)
+    {
+        if (mPeers[i]->isConnected() && mOutput != nullptr)
+        {
+            std::string str = " - " + mPeers[i]->getName();
+            mOutput->write("",str);
+        }
+    }
+}
+
+void Server::connected()
+{
+    std::string str = "Players : " + std::to_string(mConnectedPlayers) + " / " + std::to_string(mMaxPlayers);
+    if (mOutput != nullptr)
+        mOutput->write("",str);
+}
+
 void Server::setListening(bool enable)
 {
     if (enable) // Check if it isn't already listening
