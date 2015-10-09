@@ -7,21 +7,21 @@
 #include <SFML/System.hpp>
 #include <SFML/Network.hpp>
 
+
 class Connection
 {
     public:
         Connection();
         virtual ~Connection();
 
-        void run();
-        void stop();
-        void wait();
-
         bool poll(sf::Packet& packet);
         void send(sf::Packet& packet);
 
+        bool isConnected() const;
+        bool connect();
         void disconnect();
-        int getId() const;
+
+        sf::Uint32 getId() const;
 
         virtual sf::IpAddress getRemoteAddress() const = 0;
 
@@ -29,7 +29,7 @@ class Connection
         sf::TcpSocket& getSocketOut();
 
     protected:
-        bool mRunning;
+        bool mConnected;
 
         sf::TcpSocket mSocketIn;
         void receive();
@@ -43,8 +43,8 @@ class Connection
         sf::Mutex mSendMutex;
         std::queue<sf::Packet> mOutgoing;
 
-        static int mNumberOfCreations;
-        const int mId;
+        static sf::Uint32 mNumberOfCreations;
+        const sf::Uint32 mId;
 };
 
 #endif // CONNECTION_HPP

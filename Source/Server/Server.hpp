@@ -29,7 +29,7 @@ class Server
 
         // Packet
         void sendToAll(sf::Packet& packet);
-        void sendToPeer(sf::Packet& packet, int peerId);
+        void sendToPeer(sf::Packet& packet, sf::Uint32 peerId);
         void sendToPeer(sf::Packet& packet, Peer& peer);
         void sendToPeer(sf::Packet& packet, std::string const& username);
         bool isConnected(std::string const& username);

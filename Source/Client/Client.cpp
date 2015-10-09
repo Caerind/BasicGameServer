@@ -8,10 +8,7 @@ Client::Client()
 
 Client::~Client()
 {
-    if (mRunning)
-    {
-        disconnect();
-    }
+    disconnect();
 }
 
 bool Client::connect(sf::IpAddress ip, sf::Uint32 port, std::string const& username, std::string const& password)
@@ -37,11 +34,9 @@ bool Client::connect(sf::IpAddress ip, sf::Uint32 port, std::string const& usern
                 if (socketListener.accept(mSocketIn) == sf::Socket::Done)
                 {
                     std::cout << "Successfully connected !" << std::endl;
-                    mConnected = true;
                     mUsername = username;
-                    run();
                     mThread.launch();
-                    return true;
+                    return Connection::connect();
                 }
             }
         }
@@ -58,12 +53,9 @@ void Client::disconnect()
         Packet::createDisconnectPacket(packet);
         send(packet);
 
-        mConnected = false;
         mUsername = "";
 
         Connection::disconnect();
-
-        stop();
 
         std::cout << "Disconnected" << std::endl;
     }

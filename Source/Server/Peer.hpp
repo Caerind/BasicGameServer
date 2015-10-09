@@ -16,17 +16,11 @@ class Peer : public Connection
         typedef std::unique_ptr<Peer> Ptr;
 
         bool connect(Server& server);
-        virtual sf::IpAddress getRemoteAddress() const;
+        sf::IpAddress getRemoteAddress() const;
 
-        bool isConnected() const;
-        bool hasTimedOut() const;
         std::string getUsername() const;
 
-        void timedOut();
-
     protected:
-        bool mConnected;
-        bool mTimedOut;
         std::string mUsername;
 };
 

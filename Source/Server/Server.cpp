@@ -97,7 +97,7 @@ void Server::sendToAll(sf::Packet& packet)
     }
 }
 
-void Server::sendToPeer(sf::Packet& packet, int peerId)
+void Server::sendToPeer(sf::Packet& packet, sf::Uint32 peerId)
 {
     for (std::size_t i = 0; i < mPeers.size(); i++)
     {
@@ -587,7 +587,7 @@ void Server::initPacketResponses()
 
     mPacketResponses[Packet::Type::Disconnect] = [&](sf::Packet& packet, Peer& peer)
     {
-        peer.timedOut();
+        //peer.timedOut();
     };
 
     mPacketResponses[Packet::Type::ClientMessage] = [&](sf::Packet& packet, Peer& peer)

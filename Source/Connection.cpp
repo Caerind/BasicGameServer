@@ -1,9 +1,9 @@
 #include "Connection.hpp"
 
-int Connection::mNumberOfCreations = 0;
+sf::Uint32 Connection::mNumberOfCreations = 0;
 
 Connection::Connection()
-: mRunning(false)
+: mConnected(false)
 , mReceiveThread(&Connection::receive,this)
 , mSendThread(&Connection::send,this)
 , mId(++mNumberOfCreations)
@@ -12,57 +12,61 @@ Connection::Connection()
 
 Connection::~Connection()
 {
-    if (mRunning)
-    {
-        stop();
-        disconnect();
-    }
-}
-
-void Connection::run()
-{
-    mRunning = true;
-    mReceiveThread.launch();
-    mSendThread.launch();
-}
-
-void Connection::stop()
-{
-    mRunning = false;
-}
-
-void Connection::wait()
-{
-    mReceiveThread.wait();
-    mSendThread.wait();
+    disconnect();
 }
 
 bool Connection::poll(sf::Packet& packet)
 {
-    bool res = false;
-    sf::Lock guard(mReceiveMutex);
-    if (mIncoming.size())
+    sf::Lock lock(mReceiveMutex);
+    if (mIncoming.size() > 0)
     {
         std::swap(packet,mIncoming.front());
         mIncoming.pop();
-        res = true;
+        return true;
     }
-    return res;
+    return false;
 }
 
 void Connection::send(sf::Packet& packet)
 {
-    sf::Lock guard(mSendMutex);
+    sf::Lock lock(mSendMutex);
     mOutgoing.emplace(packet);
+}
+
+bool Connection::isConnected() const
+{
+    return mConnected;
+}
+
+bool Connection::connect()
+{
+    mConnected = true;
+    mReceiveThread.launch();
+    mSendThread.launch();
+    return mConnected;
 }
 
 void Connection::disconnect()
 {
+    mConnected = false;
+
+    // Stop threads
+    mReceiveThread.wait();
+    mSendThread.wait();
+
+    // Send last packets
+    while (mOutgoing.size() > 0)
+    {
+        mSocketOut.send(mOutgoing.front());
+        mOutgoing.pop();
+    }
+
+    // Stop sockets
     mSocketIn.disconnect();
     mSocketOut.disconnect();
 }
 
-int Connection::getId() const
+sf::Uint32 Connection::getId() const
 {
     return mId;
 }
@@ -82,18 +86,18 @@ void Connection::receive()
     sf::SocketSelector selector;
     selector.add(mSocketIn);
 
-    while(mRunning)
+    while (mConnected)
     {
-        if(!selector.wait(sf::seconds(1.f)))
+        if (!selector.wait(sf::seconds(1.f)))
             continue;
 
-        if(!selector.isReady(mSocketIn))
+        if (!selector.isReady(mSocketIn))
             continue;
 
         sf::Packet packet;
-        if(mSocketIn.receive(packet) == sf::Socket::Done)
+        if (mSocketIn.receive(packet) == sf::Socket::Done)
         {
-            sf::Lock guard(mReceiveMutex);
+            sf::Lock lock(mReceiveMutex);
             mIncoming.emplace(std::move(packet));
         }
     }
@@ -101,10 +105,10 @@ void Connection::receive()
 
 void Connection::send()
 {
-    while(mRunning)
+    while (mConnected)
     {
         mSendMutex.lock();
-        if(mOutgoing.size() > 0)
+        if (mOutgoing.size() > 0)
         {
             sf::Packet packet = mOutgoing.front();
             mOutgoing.pop();
