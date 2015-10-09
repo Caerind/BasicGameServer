@@ -17,13 +17,11 @@ Client::~Client()
 bool Client::connect(sf::IpAddress ip, sf::Uint32 port, std::string const& username, std::string const& password)
 {
     std::cout << "Connecting to server : " << ip << std::endl;
-    sf::TcpListener socketListener;
     if (mSocketOut.connect(ip,port,sf::seconds(5.f)) == sf::Socket::Status::Done)
     {
-        std::cout << "Connected to server !" << std::endl;
-        std::cout << "Creating second connection ..." << std::endl;
         int retry = 100;
-        port+=10;
+        port += 10;
+        sf::TcpListener socketListener;
         while (socketListener.listen(port) != sf::Socket::Status::Done && retry > 0)
         {
             ++port;
@@ -34,13 +32,11 @@ bool Client::connect(sf::IpAddress ip, sf::Uint32 port, std::string const& usern
         {
             sf::Packet packet;
             Packet::createLoginPacket(packet,username,password,port);
-            std::cout << "Send informations to server (port = " << port << ")" << std::endl;
             if (mSocketOut.send(packet) == sf::Socket::Done)
             {
-                std::cout << "Wait for server connection" << std::endl;
                 if (socketListener.accept(mSocketIn) == sf::Socket::Done)
                 {
-                    std::cout << "Connection Receive. All is good !" << std::endl;
+                    std::cout << "Successfully connected !" << std::endl;
                     mConnected = true;
                     mUsername = username;
                     run();
@@ -50,7 +46,7 @@ bool Client::connect(sf::IpAddress ip, sf::Uint32 port, std::string const& usern
             }
         }
     }
-    std::cout << "Client (" << mId << ") can't connect" << std::endl;
+    std::cout << "Can't connect..." << std::endl;
     return false;
 }
 
@@ -68,6 +64,8 @@ void Client::disconnect()
         Connection::disconnect();
 
         stop();
+
+        std::cout << "Disconnected" << std::endl;
     }
 }
 
@@ -114,6 +112,22 @@ void Client::handlePackets()
                     {
                         std::cout << msg.getContent() << std::endl;
                     }
+                } break;
+
+                case Packet::Banned:
+                {
+                    Message msg;
+                    Packet::readBannedPacket(packet,msg);
+                    std::cout << msg.getEmitter() << " : " << msg.getContent() << std::endl;
+                    disconnect();
+                } break;
+
+                case Packet::Kicked:
+                {
+                    Message msg;
+                    Packet::readKickedPacket(packet,msg);
+                    std::cout << msg.getEmitter() << " : " << msg.getContent() << std::endl;
+                    disconnect();
                 } break;
 
                 default: break;

@@ -6,6 +6,8 @@
 #include "../Connection.hpp"
 #include "../PacketType.hpp"
 
+class Server;
+
 class Peer : public Connection
 {
     public:
@@ -13,7 +15,7 @@ class Peer : public Connection
 
         typedef std::unique_ptr<Peer> Ptr;
 
-        bool connect();
+        bool connect(Server& server);
         virtual sf::IpAddress getRemoteAddress() const;
 
         bool isConnected() const;

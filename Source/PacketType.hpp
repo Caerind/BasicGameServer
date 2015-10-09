@@ -18,7 +18,8 @@ enum Type
     ClientLeft,
     ServerStopped,
     ServerMessage,
-
+    Banned,
+    Kicked,
 
     // Client To Server
     Login,
@@ -44,6 +45,14 @@ void createServerStoppedPacket(sf::Packet& packet);
 // ServerMessage
 void createServerMessagePacket(sf::Packet& packet, Message const& message);
 void readServerMessagePacket(sf::Packet& packet, Message& message);
+
+// Banned
+void createBannedPacket(sf::Packet& packet, Message const& message);
+void readBannedPacket(sf::Packet& packet, Message& message);
+
+// Kicked
+void createKickedPacket(sf::Packet& packet, Message const& message);
+void readKickedPacket(sf::Packet& packet, Message& message);
 
 // Login
 void createLoginPacket(sf::Packet& packet, std::string const& username, std::string const& password, sf::Uint32 const& port);

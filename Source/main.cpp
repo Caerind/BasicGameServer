@@ -12,7 +12,7 @@ int main(int argc, char *argv[])
 
         if (client.connect(sf::IpAddress::LocalHost,4567,"Cmdu76","test"))
         {
-
+            client.handleChat();
         }
     }
     else

@@ -43,6 +43,28 @@ void readServerMessagePacket(sf::Packet& packet, Message& message)
     packet >> message;
 }
 
+void createBannedPacket(sf::Packet& packet, Message const& message)
+{
+    packet << Packet::Type::Banned << message;
+}
+
+void readBannedPacket(sf::Packet& packet, Message& message)
+{
+    packet >> message;
+}
+
+void createKickedPacket(sf::Packet& packet, Message const& message)
+{
+    packet << Packet::Type::Banned << message;
+}
+
+void readKickedPacket(sf::Packet& packet, Message& message)
+{
+    packet >> message;
+}
+
+void readKickedPacket(sf::Packet& packet, Message& message);
+
 void createLoginPacket(sf::Packet& packet, std::string const& username, std::string const& password, sf::Uint32 const& port)
 {
     packet << Packet::Type::Login << username << password << port;
