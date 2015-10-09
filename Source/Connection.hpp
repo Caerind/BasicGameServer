@@ -2,11 +2,9 @@
 #define CONNECTION_HPP
 
 #include <queue>
-#include <iostream>
 
 #include <SFML/System.hpp>
 #include <SFML/Network.hpp>
-
 
 class Connection
 {
@@ -28,19 +26,24 @@ class Connection
         sf::TcpSocket& getSocketIn();
         sf::TcpSocket& getSocketOut();
 
+        sf::Time getLastReceivePacketTime() const;
+        sf::Time getLastSendPacketTime() const;
+
     protected:
         bool mConnected;
 
-        sf::TcpSocket mSocketIn;
         void receive();
+        sf::TcpSocket mSocketIn;
         sf::Thread mReceiveThread;
         sf::Mutex mReceiveMutex;
+        sf::Clock mReceiveClock;
         std::queue<sf::Packet> mIncoming;
 
-        sf::TcpSocket mSocketOut;
         void send();
+        sf::TcpSocket mSocketOut;
         sf::Thread mSendThread;
         sf::Mutex mSendMutex;
+        sf::Clock mSendClock;
         std::queue<sf::Packet> mOutgoing;
 
         static sf::Uint32 mNumberOfCreations;

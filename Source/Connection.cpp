@@ -41,6 +41,8 @@ bool Connection::isConnected() const
 bool Connection::connect()
 {
     mConnected = true;
+    mReceiveClock.restart();
+    mSendClock.restart();
     mReceiveThread.launch();
     mSendThread.launch();
     return mConnected;
@@ -81,6 +83,16 @@ sf::TcpSocket& Connection::getSocketOut()
     return mSocketOut;
 }
 
+sf::Time Connection::getLastReceivePacketTime() const
+{
+    return mReceiveClock.getElapsedTime();
+}
+
+sf::Time Connection::getLastSendPacketTime() const
+{
+    return mSendClock.getElapsedTime();
+}
+
 void Connection::receive()
 {
     sf::SocketSelector selector;
@@ -99,6 +111,7 @@ void Connection::receive()
         {
             sf::Lock lock(mReceiveMutex);
             mIncoming.emplace(std::move(packet));
+            mReceiveClock.restart();
         }
     }
 }
@@ -107,17 +120,28 @@ void Connection::send()
 {
     while (mConnected)
     {
-        mSendMutex.lock();
         if (mOutgoing.size() > 0)
         {
+            mSendMutex.lock();
             sf::Packet packet = mOutgoing.front();
             mOutgoing.pop();
             mSendMutex.unlock();
-            mSocketOut.send(packet);
+            if (mSocketOut.send(packet) == sf::Socket::Done)
+            {
+                sf::Lock lock(mSendMutex);
+                mSendClock.restart();
+            }
         }
-        else
+
+        if (mSendClock.restart() > sf::seconds(1.f))
         {
-            mSendMutex.unlock();
+            sf::Packet packet;
+            Packet::createNonePacket(packet);
+            if (mSocketOut.send(packet) == sf::Socket::Done)
+            {
+                sf::Lock lock(mSendMutex);
+                mSendClock.restart();
+            }
         }
     }
 }
