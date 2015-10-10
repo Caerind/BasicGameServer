@@ -133,7 +133,7 @@ void Connection::send()
             }
         }
 
-        if (mSendClock.restart() > sf::seconds(1.f))
+        if (mSendClock.getElapsedTime() > sf::seconds(1.f))
         {
             sf::Packet packet;
             Packet::createNonePacket(packet);

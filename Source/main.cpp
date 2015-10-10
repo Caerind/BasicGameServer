@@ -9,10 +9,18 @@ int main(int argc, char *argv[])
     if (argc == 1)
     {
         Client client;
-
-        if (client.connect(sf::IpAddress::LocalHost,4567,"Cmdu76","test"))
+        int retry = 3;
+        while (retry > 0)
         {
-            client.handleChat();
+            if (client.connect(sf::IpAddress::LocalHost,4567,"Cmdu76","test"))
+            {
+                client.handleChat();
+                retry = 0;
+            }
+            else
+            {
+                retry--;
+            }
         }
     }
     else

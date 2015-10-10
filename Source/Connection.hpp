@@ -6,6 +6,8 @@
 #include <SFML/System.hpp>
 #include <SFML/Network.hpp>
 
+#include "PacketType.hpp"
+
 class Connection
 {
     public:
