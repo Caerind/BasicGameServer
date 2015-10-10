@@ -2,60 +2,65 @@
 
 Client::Client()
 : mThread(&Client::handlePackets,this)
-, mConnected(false)
 {
 }
 
 Client::~Client()
 {
-    disconnect();
+    disconnect(true);
 }
 
 bool Client::connect(sf::IpAddress ip, sf::Uint32 port, std::string const& username, std::string const& password)
 {
-    std::cout << "Connecting to server : " << ip << std::endl;
-    if (mSocketOut.connect(ip,port,sf::seconds(5.f)) == sf::Socket::Status::Done)
+    if (!mConnected)
     {
-        int retry = 100;
-        port += 10;
-        sf::TcpListener socketListener;
-        while (socketListener.listen(port) != sf::Socket::Status::Done && retry > 0)
+        std::cout << "Connecting to server : " << ip << std::endl;
+        if (mSocketOut.connect(ip,port,sf::seconds(5.f)) == sf::Socket::Status::Done)
         {
-            ++port;
-            --retry;
-        }
-
-        if (retry > 0)
-        {
-            sf::Packet packet;
-            Packet::createLoginPacket(packet,username,password,port);
-            if (mSocketOut.send(packet) == sf::Socket::Done)
+            int retry = 100;
+            port += 10;
+            sf::TcpListener socketListener;
+            while (socketListener.listen(port) != sf::Socket::Status::Done && retry > 0)
             {
-                if (socketListener.accept(mSocketIn) == sf::Socket::Done)
+                ++port;
+                --retry;
+            }
+
+            if (retry > 0)
+            {
+                sf::Packet packet;
+                Packet::createLoginPacket(packet,username,password,port);
+                if (mSocketOut.send(packet) == sf::Socket::Done)
                 {
-                    std::cout << "Successfully connected !" << std::endl;
-                    mUsername = username;
-                    mThread.launch();
-                    return Connection::connect();
+                    if (socketListener.accept(mSocketIn) == sf::Socket::Done)
+                    {
+                        std::cout << "Successfully connected !" << std::endl;
+                        mUsername = username;
+                        mThread.launch();
+                        return Connection::connect();
+                    }
                 }
             }
         }
+        std::cout << "Can't connect..." << std::endl;
     }
-    std::cout << "Can't connect..." << std::endl;
-    return false;
+    return mConnected;
 }
 
-void Client::disconnect()
+void Client::disconnect(bool sendPacket)
 {
-    if (isConnected())
+    if (mConnected)
     {
-        sf::Packet packet;
-        Packet::createDisconnectPacket(packet);
-        send(packet);
-
-        mUsername = "";
+        if (sendPacket)
+        {
+            sf::Packet packet;
+            Packet::createDisconnectPacket(packet);
+            send(packet);
+        }
 
         Connection::disconnect();
+
+        mUsername = "";
 
         std::cout << "Disconnected" << std::endl;
     }
@@ -63,7 +68,7 @@ void Client::disconnect()
 
 void Client::handlePackets()
 {
-    while (isConnected())
+    while (mConnected)
     {
         sf::Packet packet;
         while (poll(packet))
@@ -89,7 +94,7 @@ void Client::handlePackets()
                 case Packet::ServerStopped:
                 {
                     std::cout << "Server stopped..." << std::endl;
-                    disconnect();
+                    disconnect(false);
                 } break;
 
                 case Packet::ServerMessage:
@@ -111,7 +116,7 @@ void Client::handlePackets()
                     Message msg;
                     Packet::readBannedPacket(packet,msg);
                     std::cout << msg.getEmitter() << " : " << msg.getContent() << std::endl;
-                    disconnect();
+                    disconnect(false);
                 } break;
 
                 case Packet::Kicked:
@@ -119,11 +124,17 @@ void Client::handlePackets()
                     Message msg;
                     Packet::readKickedPacket(packet,msg);
                     std::cout << msg.getEmitter() << " : " << msg.getContent() << std::endl;
-                    disconnect();
+                    disconnect(false);
                 } break;
 
                 default: break;
             }
+        }
+
+        if (getLastReceivePacketTime() > sf::seconds(5.f) || getLastSendPacketTime() > sf::seconds(5.f))
+        {
+            std::cout << "Timeout" << std::endl;
+            disconnect(false);
         }
     }
 }
@@ -148,11 +159,6 @@ void Client::handleChat()
 sf::IpAddress Client::getRemoteAddress() const
 {
     return mSocketOut.getRemoteAddress();
-}
-
-bool Client::isConnected() const
-{
-    return mConnected;
 }
 
 std::string Client::getUsername() const

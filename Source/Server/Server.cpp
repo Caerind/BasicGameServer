@@ -33,10 +33,23 @@ Server::Server(std::string const& propertiesFile, std::string const& logFile)
     mListener.setBlocking(false);
 	mPeers[0].reset(new Peer());
 
-    *this << "[Server] Server Version 0.1"; // TODO : Version system
-	*this << "[Server]  - Max Players : 10"; // TODO : Settings
-	*this << "[Server]  - Server Port : 4567";
-	// Adddress
+    // Display settings
+	{
+	    std::ostringstream oss;
+        //oss << mVersion;
+        *this << "[Server] Server Version 0.1"; // TODO : Version system
+	}
+    {
+        std::ostringstream oss;
+        oss << mMaxPlayers;
+        *this << "[Server]  - Max Players : " + oss.str();
+    }
+	*this << "[Server]  - Server Ip : " + sf::IpAddress::getPublicAddress().toString();
+	{
+        std::ostringstream oss;
+        oss << mPort;
+        *this << "[Server]  - Server Port : " + oss.str();
+    }
 
 	start();
 }

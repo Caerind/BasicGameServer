@@ -1,6 +1,7 @@
 #ifndef PEER_HPP
 #define PEER_HPP
 
+#include <iostream>
 #include <memory>
 
 #include "../Connection.hpp"
@@ -11,11 +12,14 @@ class Server;
 class Peer : public Connection
 {
     public:
-        Peer();
-
         typedef std::unique_ptr<Peer> Ptr;
 
+        Peer();
+        ~Peer();
+
         bool connect(Server& server);
+        void disconnect();
+
         sf::IpAddress getRemoteAddress() const;
 
         std::string getUsername() const;

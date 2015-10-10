@@ -5,33 +5,53 @@ Peer::Peer()
 {
 }
 
+Peer::~Peer()
+{
+    disconnect();
+}
+
 bool Peer::connect(Server& server)
 {
-    sf::Packet packet;
-    if (mSocketIn.receive(packet) == sf::Socket::Done)
+    if (!mConnected)
     {
-        sf::Int32 packetType;
-        packet >> packetType;
-        if (packetType == Packet::Type::Login)
+        sf::Packet packet;
+        if (mSocketIn.receive(packet) == sf::Socket::Done)
         {
-            sf::IpAddress ip = mSocketIn.getRemoteAddress();
-            std::string username, password;
-            sf::Uint32 port;
-            Packet::readLoginPacket(packet,username,password,port);
-            // TODO : Test login in a db
-            if (true && !server.isBanned(username) && !server.isBannedIp(ip)) // test login AND isn't ban AND isn't banip
+            sf::Int32 packetType;
+            packet >> packetType;
+            if (packetType == Packet::Type::Login)
             {
-                if(mSocketOut.connect(ip,port,sf::seconds(5.f)) == sf::Socket::Status::Done)
+                sf::IpAddress ip = mSocketIn.getRemoteAddress();
+                std::string username, password;
+                sf::Uint32 port;
+                Packet::readLoginPacket(packet,username,password,port);
+
+                // Test login AND isn't ban AND isn't banip
+                // TODO : Test login in a db
+                if (true && !server.isBanned(username) && !server.isBannedIp(ip))
                 {
-                    mUsername = username;
-                    Connection::connect();
-                    return true;
+                    if(mSocketOut.connect(ip,port,sf::seconds(5.f)) == sf::Socket::Status::Done)
+                    {
+                        std::cout << " - Peer (" << mId << ") connected" << std::endl;
+                        mUsername = username;
+                        return Connection::connect();
+                    }
                 }
             }
         }
+        std::cout << " - Peer (" << mId << ") can't connect" << std::endl;
     }
-    std::cout << "Peer (" << mId << ") can't connect" << std::endl;
-    return false;
+    return mConnected;
+}
+
+void Peer::disconnect()
+{
+    if (mConnected)
+    {
+        Connection::disconnect();
+        mUsername = "";
+        std::cout << " - Peer (" << mId << ") disconnected" << std::endl;
+    }
 }
 
 sf::IpAddress Peer::getRemoteAddress() const

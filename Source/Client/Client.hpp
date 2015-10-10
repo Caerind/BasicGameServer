@@ -1,6 +1,8 @@
 #ifndef CLIENT_HPP
 #define CLIENT_HPP
 
+#include <iostream>
+
 #include "../Connection.hpp"
 #include "../PacketType.hpp"
 
@@ -11,21 +13,18 @@ class Client : public Connection
         ~Client();
 
         bool connect(sf::IpAddress ip, sf::Uint32 port, std::string const& username, std::string const& password);
-        void disconnect();
+        void disconnect(bool sendPacket);
 
         void handlePackets();
         void handleChat();
 
         sf::IpAddress getRemoteAddress() const;
 
-        bool isConnected() const;
         std::string getUsername() const;
 
     protected:
         sf::Thread mThread;
 
-
-        bool mConnected;
         std::string mUsername;
 };
 
