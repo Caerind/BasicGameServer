@@ -2,6 +2,7 @@
 #define MESSAGE_HPP
 
 #include <ctime>
+#include <iostream>
 #include <string>
 
 #include <SFML/Network/Packet.hpp>
@@ -22,13 +23,15 @@ class Message
         void setTime(sf::Int64 time);
         void setActualTime();
 
+        friend std::ostream& operator<< (std::ostream& stream, const Message& message);
+        friend sf::Packet& operator<< (sf::Packet& packet, const Message& msg);
+        friend sf::Packet& operator>> (sf::Packet& packet, Message& msg);
+
     private:
         std::string mEmitter;
         std::string mContent;
         sf::Int64 mTime;
 };
 
-sf::Packet& operator <<(sf::Packet& packet, const Message& msg);
-sf::Packet& operator >>(sf::Packet& packet, Message& msg);
 
 #endif // MESSAGE_HPP

@@ -49,7 +49,7 @@ bool Client::connect(sf::IpAddress ip, sf::Uint32 port, std::string const& usern
 
 void Client::disconnect(bool sendPacket)
 {
-    if (mConnected)
+    if (isConnected())
     {
         if (sendPacket)
         {
@@ -68,7 +68,7 @@ void Client::disconnect(bool sendPacket)
 
 void Client::handlePackets()
 {
-    while (mConnected)
+    while (isConnected())
     {
         sf::Packet packet;
         while (poll(packet))
@@ -101,21 +101,14 @@ void Client::handlePackets()
                 {
                     Message msg;
                     Packet::readServerMessagePacket(packet,msg);
-                    if (msg.getEmitter() != "")
-                    {
-                        std::cout << msg.getEmitter() << " : " << msg.getContent() << std::endl;
-                    }
-                    else
-                    {
-                        std::cout << msg.getContent() << std::endl;
-                    }
+                    std::cout << msg << std::endl;
                 } break;
 
                 case Packet::Banned:
                 {
                     Message msg;
                     Packet::readBannedPacket(packet,msg);
-                    std::cout << msg.getEmitter() << " : " << msg.getContent() << std::endl;
+                    std::cout << msg << std::endl;
                     disconnect(false);
                 } break;
 
@@ -123,7 +116,7 @@ void Client::handlePackets()
                 {
                     Message msg;
                     Packet::readKickedPacket(packet,msg);
-                    std::cout << msg.getEmitter() << " : " << msg.getContent() << std::endl;
+                    std::cout << msg << std::endl;
                     disconnect(false);
                 } break;
 
@@ -145,6 +138,11 @@ void Client::handleChat()
     {
         std::string command;
         std::getline(std::cin, command);
+
+        if (command == "stop" || !isConnected())
+        {
+            break;
+        }
 
         Message msg;
         msg.setEmitter(getUsername());

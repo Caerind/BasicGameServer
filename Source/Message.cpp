@@ -45,6 +45,19 @@ void Message::setActualTime()
     mTime = static_cast<sf::Int64>(time(nullptr));
 }
 
+std::ostream& operator <<(std::ostream& stream, const Message& message)
+{
+    if (message.getEmitter() != "")
+    {
+        stream << message.getEmitter() << " : " << message.getContent();
+    }
+    else
+    {
+        stream << message.getContent();
+    }
+    return stream;
+}
+
 sf::Packet& operator <<(sf::Packet& packet, const Message& msg)
 {
     return packet << msg.getEmitter() << msg.getContent() << msg.getTime();
