@@ -20,12 +20,15 @@ class Peer : public Connection
         bool connect(Server& server);
         void disconnect();
 
+        bool disconnecting() const;
+
         sf::IpAddress getRemoteAddress() const;
 
         std::string getUsername() const;
 
     protected:
         std::string mUsername;
+        bool mDisconnecting;
 };
 
 #endif // PEER_HPP

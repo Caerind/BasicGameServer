@@ -672,34 +672,37 @@ void Server::update(sf::Time dt)
 
 void Server::handlePackets()
 {
-    bool detectedTimeout = false;
+    bool detectedDisconnection = false;
 
 	for (std::size_t i = 0; i < mConnectedPlayers; i++)
 	{
-		if (mPeers[i]->isConnected())
-		{
-			sf::Packet packet;
-			while (mPeers[i]->poll(packet))
-			{
-                handlePacket(packet,*mPeers[i], detectedTimeout);
-				packet.clear();
-			}
+		if (mPeers[i] != nullptr)
+        {
+            if (mPeers[i]->isConnected())
+            {
+                sf::Packet packet;
+                while (mPeers[i]->poll(packet))
+                {
+                    handlePacket(packet,*mPeers[i], detectedDisconnection);
+                    packet.clear();
+                }
 
-			/*
-			if (mPeers[i]->getLastPacketTime() > mClientTimeoutTime)
-			{
-				mPeers[i]->timedOut();
-				detectedTimeout = true;
-			}
-			*/
-		}
+                /*
+                if (mPeers[i]->getLastPacketTime() > mClientTimeoutTime)
+                {
+                    mPeers[i]->timedOut();
+                    detectedTimeout = true;
+                }
+                */
+            }
+        }
 	}
 
-	if (detectedTimeout)
+	if (detectedDisconnection)
 		handleDisconnections();
 }
 
-void Server::handlePacket(sf::Packet& packet, Peer& peer, bool& detectedTimeout)
+void Server::handlePacket(sf::Packet& packet, Peer& peer, bool& detectedDisconnection)
 {
     sf::Int32 packetType;
     packet >> packetType;
@@ -712,7 +715,7 @@ void Server::handlePacket(sf::Packet& packet, Peer& peer, bool& detectedTimeout)
 
             if (packetType == Packet::Disconnect)
             {
-                detectedTimeout = true;
+                detectedDisconnection = true;
             }
         }
     }
@@ -749,9 +752,9 @@ void Server::handleDisconnections()
 {
     for (auto itr = mPeers.begin(); itr != mPeers.end(); )
 	{
-		if (!(*itr)->isConnected())
+		if (!(*itr)->disconnecting())
 		{
-		    std::string username = mPeers[mConnectedPlayers]->getUsername();
+		    std::string username = (*itr)->getUsername();
 
             sf::Packet packet;
             Packet::createClientLeftPacket(packet,username);
@@ -759,10 +762,9 @@ void Server::handleDisconnections()
 
             *this << "[Server] " + username + " left the game";
 
+			mPeers.erase(itr);
+
 			mConnectedPlayers--;
-
-			itr = mPeers.erase(itr);
-
 			if (mConnectedPlayers < mMaxPlayers)
 			{
 				mPeers.push_back(Peer::Ptr(new Peer()));

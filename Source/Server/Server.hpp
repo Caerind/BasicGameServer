@@ -81,7 +81,7 @@ class Server
         void update(sf::Time dt);
 
         void handlePackets();
-        void handlePacket(sf::Packet& packet, Peer& peer, bool& detectedTimeout);
+        void handlePacket(sf::Packet& packet, Peer& peer, bool& detectedDisconnection);
 
         void handleConnections();
         void handleDisconnections();
