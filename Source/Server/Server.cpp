@@ -526,6 +526,12 @@ void Server::initCommands()
         *this << "[Server] help : Display the list of commands";
         *this << "[Server] stop : Stop the server";
         *this << "[Server] say : Say something";
+        *this << "[Server] ban : Ban an username";
+        *this << "[Server] unban : Unban an username";
+        *this << "[Server] banip : Ban an ip address";
+        *this << "[Server] unbanip : Unban an ip address";
+        *this << "[Server] op : Promote an user to admin rank";
+        *this << "[Server] deop : Demote an user from admin rank";
         return std::string("/help : Display the list of commands\n/stop : Stop the server\n/say : Say something");
     };
 
@@ -586,6 +592,59 @@ void Server::initCommands()
         }
         return "";
     };
+
+    mPermissions["unban"] = false;
+    mCommands["unban"] = [&](std::string const& args) -> std::string
+    {
+        std::string username = args;
+        std::size_t f = args.find(" ");
+        if (f != std::string::npos)
+        {
+            username = args.substr(0,f);
+        }
+        unban(username);
+        return "";
+    };
+
+    mPermissions["unbanip"] = false;
+    mCommands["unbanip"] = [&](std::string const& args) -> std::string
+    {
+        sf::IpAddress ip = sf::IpAddress(args);
+        std::size_t f = args.find(" ");
+        if (f != std::string::npos)
+        {
+            ip = sf::IpAddress(args.substr(0,f));
+        }
+        unbanIp(ip);
+        return "";
+    };
+
+    mPermissions["op"] = false;
+    mCommands["op"] = [&](std::string const& args) -> std::string
+    {
+        std::string username = args;
+        std::size_t f = args.find(" ");
+        if (f != std::string::npos)
+        {
+            username = args.substr(0,f);
+        }
+        addAdmin(username);
+        return "";
+    };
+
+    mPermissions["deop"] = false;
+    mCommands["deop"] = [&](std::string const& args) -> std::string
+    {
+        std::string username = args;
+        std::size_t f = args.find(" ");
+        if (f != std::string::npos)
+        {
+            username = args.substr(0,f);
+        }
+        removeAdmin(username);
+        return "";
+    };
+
 }
 
 void Server::initPacketResponses()
@@ -600,7 +659,7 @@ void Server::initPacketResponses()
 
     mPacketResponses[Packet::Type::Disconnect] = [&](sf::Packet& packet, Peer& peer)
     {
-        //peer.timedOut();
+        peer.disconnect();
     };
 
     mPacketResponses[Packet::Type::ClientMessage] = [&](sf::Packet& packet, Peer& peer)
@@ -687,13 +746,11 @@ void Server::handlePackets()
                     packet.clear();
                 }
 
-                /*
-                if (mPeers[i]->getLastPacketTime() > mClientTimeoutTime)
+                if (mPeers[i]->getLastReceivePacketTime() > sf::seconds(5.f) || mPeers[i]->getLastSendPacketTime() > sf::seconds(5.f))
                 {
-                    mPeers[i]->timedOut();
-                    detectedTimeout = true;
+                    mPeers[i]->disconnect();
+                    detectedDisconnection = true;
                 }
-                */
             }
         }
 	}
@@ -750,11 +807,11 @@ void Server::handleConnections()
 
 void Server::handleDisconnections()
 {
-    for (auto itr = mPeers.begin(); itr != mPeers.end(); )
+    for (std::size_t i = 0; i < mPeers.size(); i++)
 	{
-		if (!(*itr)->disconnecting())
+		if (!mPeers[i]->disconnecting())
 		{
-		    std::string username = (*itr)->getUsername();
+		    std::string username = mPeers[i]->getUsername();
 
             sf::Packet packet;
             Packet::createClientLeftPacket(packet,username);
@@ -762,7 +819,7 @@ void Server::handleDisconnections()
 
             *this << "[Server] " + username + " left the game";
 
-			mPeers.erase(itr);
+			mPeers.erase(i + mPeers.begin());
 
 			mConnectedPlayers--;
 			if (mConnectedPlayers < mMaxPlayers)
@@ -770,11 +827,9 @@ void Server::handleDisconnections()
 				mPeers.push_back(Peer::Ptr(new Peer()));
 				setListening(true);
 			}
+
+			i--;
         }
-		else
-		{
-			++itr;
-		}
 	}
 }
 

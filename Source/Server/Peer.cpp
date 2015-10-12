@@ -50,7 +50,6 @@ void Peer::disconnect()
     if (mConnected)
     {
         Connection::disconnect();
-        mUsername = "";
         mDisconnecting = true;
         std::cout << " - Peer (" << mId << ") disconnected" << std::endl;
     }
