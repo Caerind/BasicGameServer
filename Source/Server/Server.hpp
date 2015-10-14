@@ -20,13 +20,10 @@ class Server
         Server(std::string const& propertiesFile, std::string const& logFile = "");
         ~Server();
 
-        void handleAdminInput();
-
-
-
         typedef std::function<void(sf::Packet&,Peer&)> Response;
 
         // Server
+        virtual void load();
         virtual void start();
         virtual void stop();
         bool isRunning() const;

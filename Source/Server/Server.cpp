@@ -9,23 +9,22 @@ Server::Server(std::string const& propertiesFile, std::string const& logFile)
 , mConnectedPlayers(0)
 , mPeers(1)
 {
+    sf::Clock clock;
+
+    openLog(logFile);
+
+    *this << "[Server] Loading server";
+
     mListener.setBlocking(false);
 	mPeers[0].reset(new Peer());
 
     if (!loadSettings())
     {
-        createSettings(); // TODO : Settings
+        createSettings();
         saveSettings();
     }
 
-    // TODO : Settings
-    openLog(logFile);
-
-    // TODO : Settings
-    mMaxPlayers = 10;
-    mPort = 4567;
-    mClientTimeoutTime = sf::seconds(5.f);
-    mUpdateInterval = sf::seconds(1.f/60.f);
+    load();
 
     initCommands();
     initPacketResponses();
@@ -33,25 +32,7 @@ Server::Server(std::string const& propertiesFile, std::string const& logFile)
     loadAdmins();
     loadBans();
 
-    // Display settings
-	{
-	    std::ostringstream oss;
-        //oss << mVersion;
-        *this << "[Server] Server Version 0.1"; // TODO : Version system
-	}
-    {
-        std::ostringstream oss;
-        oss << mMaxPlayers;
-        *this << "[Server]  - Max Players : " + oss.str();
-    }
-	*this << "[Server]  - Server Ip : " + sf::IpAddress::getPublicAddress().toString();
-	{
-        std::ostringstream oss;
-        oss << mPort;
-        *this << "[Server]  - Server Port : " + oss.str();
-    }
-
-	start();
+    *this << "[Server] Loaded in " + to_string(clock.restart().asSeconds()) + "s !";
 }
 
 Server::~Server()
@@ -59,21 +40,17 @@ Server::~Server()
     stop();
 }
 
-void Server::handleAdminInput()
+void Server::load()
 {
-    while (mRunning)
-    {
-        std::string command;
-        std::getline(std::cin, command);
-        handleCommand(command);
-    }
+    mMaxPlayers = 10;
+    mPort = 4567;
+    mClientTimeoutTime = sf::seconds(5.f);
+    mUpdateInterval = sf::seconds(1.f/60.f);
 }
 
 void Server::start()
 {
-    *this << "[Server] Starting server...";
     mRunning = true;
-
     mThread.launch();
 
     *this << "[Server] Server started !";
@@ -174,14 +151,18 @@ std::string Server::handleCommand(std::string const& command, bool server, std::
             {
                 return itr->second.execute(args[1]);
             }
-            else if (itr->second.isAdminOnly() || itr->second.getPermissionLevel() > 10)
+            else
             {
                 return "You don't have the permission to do that";
             }
-            else
+        }
+        else
+        {
+            if (server)
             {
-                return "Unknown command";
+                *this << "[Server] Unknow command, try \"help\" to see the list of commands";
             }
+            return "Unknown command";
         }
     }
     return "";

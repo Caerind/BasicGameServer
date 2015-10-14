@@ -2,7 +2,7 @@
 #include <iostream>
 #include <SFML/Network/IpAddress.hpp>
 #include "Client/Client.hpp"
-#include "Server/Server.hpp"
+#include "Server/GameServer.hpp"
 
 int main(int argc, char *argv[])
 {
@@ -25,8 +25,14 @@ int main(int argc, char *argv[])
     }
     else
     {
-        Server server("server.properties","server.log");
-        server.handleAdminInput();
+        GameServer server;
+        server.start();
+        while (server.isRunning())
+        {
+            std::string command;
+            std::getline(std::cin, command);
+            server.handleCommand(command);
+        }
     }
     return EXIT_SUCCESS;
 }

@@ -3,6 +3,7 @@
 
 #include <ctime>
 #include <iostream>
+#include <sstream>
 #include <string>
 
 #include <SFML/Network/Packet.hpp>
@@ -33,6 +34,23 @@ class Message
         std::string mContent;
         sf::Int64 mTime;
 };
+
+template <typename T>
+std::string to_string(T const& value)
+{
+    std::ostringstream oss;
+    oss << value;
+    return oss.str();
+}
+
+template <typename T>
+T from_string(std::string const& value)
+{
+    std::istringstream iss(value);
+    T v;
+    iss >> v;
+    return v;
+}
 
 
 #endif // MESSAGE_HPP
