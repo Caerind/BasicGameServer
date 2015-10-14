@@ -3,7 +3,7 @@
 
 Peer::Peer()
 {
-    mDisconnecting = false;
+    mRemove = false;
 }
 
 Peer::~Peer()
@@ -50,14 +50,18 @@ void Peer::disconnect()
     if (mConnected)
     {
         Connection::disconnect();
-        mDisconnecting = true;
         std::cout << " - Peer (" << mId << ") disconnected" << std::endl;
     }
 }
 
-bool Peer::disconnecting() const
+void Peer::remove()
 {
-    return mDisconnecting;
+    mRemove = true;
+}
+
+bool Peer::needRemove() const
+{
+    return mRemove;
 }
 
 sf::IpAddress Peer::getRemoteAddress() const

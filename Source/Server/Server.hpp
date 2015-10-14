@@ -75,13 +75,16 @@ class Server
         virtual void initCommands();
         virtual void initPacketResponses();
 
+        virtual void onConnection(Peer& peer);
+        virtual void onDisconnection(Peer& peer);
+
         void setListening(bool enable);
 
         void run();
         void update(sf::Time dt);
 
         void handlePackets();
-        void handlePacket(sf::Packet& packet, Peer& peer, bool& detectedDisconnection);
+        void handlePacket(sf::Packet& packet, Peer& peer);
 
         void handleConnections();
         void handleDisconnections();

@@ -20,7 +20,8 @@ class Peer : public Connection
         bool connect(Server& server);
         void disconnect();
 
-        bool disconnecting() const;
+        void remove();
+        bool needRemove() const;
 
         sf::IpAddress getRemoteAddress() const;
 
@@ -28,7 +29,7 @@ class Peer : public Connection
 
     protected:
         std::string mUsername;
-        bool mDisconnecting;
+        bool mRemove;
 };
 
 #endif // PEER_HPP

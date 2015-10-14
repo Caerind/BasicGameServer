@@ -9,6 +9,9 @@ Server::Server(std::string const& propertiesFile, std::string const& logFile)
 , mConnectedPlayers(0)
 , mPeers(1)
 {
+    mListener.setBlocking(false);
+	mPeers[0].reset(new Peer());
+
     if (!loadSettings())
     {
         createSettings(); // TODO : Settings
@@ -29,9 +32,6 @@ Server::Server(std::string const& propertiesFile, std::string const& logFile)
 
     loadAdmins();
     loadBans();
-
-    mListener.setBlocking(false);
-	mPeers[0].reset(new Peer());
 
     // Display settings
 	{
@@ -440,10 +440,10 @@ bool Server::loadSettings()
     {
         if(line.size() > 0 && line[0] != '#')
         {
-            size_t index = 0;
+            std::size_t index = 0;
             while(std::isspace(line[index]))
                 index++;
-            const size_t beginKeyString = index;
+            const std::size_t beginKeyString = index;
             while(!std::isspace(line[index]) && line[index] != '=')
                 index++;
             const std::string key = line.substr(beginKeyString, index - beginKeyString);
@@ -645,6 +645,32 @@ void Server::initCommands()
         return "";
     };
 
+    mPermissions["kick"] = false;
+    mCommands["kick"] = [&](std::string const& args) -> std::string
+    {
+        std::size_t f = args.find(" ");
+        std::string username;
+        Message msg;
+        msg.setEmitter("[Server]");
+        if (f != std::string::npos)
+        {
+            std::string reason = args.substr(f+1);
+            username = args.substr(0,f);
+            *this << username + " has been kicked for : " + reason;
+            msg.setContent("You have been kicked for : " + reason);
+        }
+        else
+        {
+            username = args;
+            *this << username + " has been kicked";
+            msg.setContent("You have been kicked");
+        }
+        sf::Packet packet;
+        Packet::createKickedPacket(packet,msg);
+        sendToPeer(packet,username);
+        return "";
+    };
+
 }
 
 void Server::initPacketResponses()
@@ -659,7 +685,7 @@ void Server::initPacketResponses()
 
     mPacketResponses[Packet::Type::Disconnect] = [&](sf::Packet& packet, Peer& peer)
     {
-        peer.disconnect();
+        peer.remove();
     };
 
     mPacketResponses[Packet::Type::ClientMessage] = [&](sf::Packet& packet, Peer& peer)
@@ -688,6 +714,28 @@ void Server::initPacketResponses()
     };
 }
 
+void Server::onConnection(Peer& peer)
+{
+    std::string username = peer.getUsername();
+
+    sf::Packet packet;
+    Packet::createClientJoinedPacket(packet,username);
+    sendToAll(packet);
+
+    *this << "[Server] " + username + " joined the game";
+}
+
+void Server::onDisconnection(Peer& peer)
+{
+    std::string username = peer.getUsername();
+
+    sf::Packet packet;
+    Packet::createClientLeftPacket(packet,username);
+    sendToAll(packet);
+
+    *this << "[Server] " + username + " left the game";
+}
+
 void Server::setListening(bool enable)
 {
     if (enable) // Check if it isn't already listening
@@ -714,6 +762,7 @@ void Server::run()
     {
         handlePackets();
         handleConnections();
+        handleDisconnections();
 
         if (updateClock.getElapsedTime() > mUpdateInterval)
         {
@@ -731,9 +780,7 @@ void Server::update(sf::Time dt)
 
 void Server::handlePackets()
 {
-    bool detectedDisconnection = false;
-
-	for (std::size_t i = 0; i < mConnectedPlayers; i++)
+    for (std::size_t i = 0; i < mConnectedPlayers; i++)
 	{
 		if (mPeers[i] != nullptr)
         {
@@ -742,24 +789,20 @@ void Server::handlePackets()
                 sf::Packet packet;
                 while (mPeers[i]->poll(packet))
                 {
-                    handlePacket(packet,*mPeers[i], detectedDisconnection);
+                    handlePacket(packet,*mPeers[i]);
                     packet.clear();
                 }
 
                 if (mPeers[i]->getLastReceivePacketTime() > sf::seconds(5.f) || mPeers[i]->getLastSendPacketTime() > sf::seconds(5.f))
                 {
-                    mPeers[i]->disconnect();
-                    detectedDisconnection = true;
+                    mPeers[i]->remove();
                 }
             }
         }
 	}
-
-	if (detectedDisconnection)
-		handleDisconnections();
 }
 
-void Server::handlePacket(sf::Packet& packet, Peer& peer, bool& detectedDisconnection)
+void Server::handlePacket(sf::Packet& packet, Peer& peer)
 {
     sf::Int32 packetType;
     packet >> packetType;
@@ -769,11 +812,6 @@ void Server::handlePacket(sf::Packet& packet, Peer& peer, bool& detectedDisconne
         if (itr->first == packetType && itr->second)
         {
             itr->second(packet,peer);
-
-            if (packetType == Packet::Disconnect)
-            {
-                detectedDisconnection = true;
-            }
         }
     }
 }
@@ -787,13 +825,7 @@ void Server::handleConnections()
 	{
 		if (mPeers[mConnectedPlayers]->connect(*this))
         {
-            std::string username = mPeers[mConnectedPlayers]->getUsername();
-
-            sf::Packet packet;
-            Packet::createClientJoinedPacket(packet,username);
-            sendToAll(packet);
-
-            *this << "[Server] " + username + " joined the game";
+            onConnection(*mPeers[mConnectedPlayers]);
 
             mConnectedPlayers++;
 
@@ -809,20 +841,14 @@ void Server::handleDisconnections()
 {
     for (std::size_t i = 0; i < mPeers.size(); i++)
 	{
-		if (!mPeers[i]->disconnecting())
+		if (mPeers[i]->needRemove())
 		{
-		    std::string username = mPeers[i]->getUsername();
-
-            sf::Packet packet;
-            Packet::createClientLeftPacket(packet,username);
-            sendToAll(packet);
-
-            *this << "[Server] " + username + " left the game";
+		    onDisconnection(*mPeers[i]);
 
 			mPeers.erase(i + mPeers.begin());
 
 			mConnectedPlayers--;
-			if (mConnectedPlayers < mMaxPlayers)
+			if (mConnectedPlayers < mMaxPlayers) // TODO : Fix wrong size
 			{
 				mPeers.push_back(Peer::Ptr(new Peer()));
 				setListening(true);
