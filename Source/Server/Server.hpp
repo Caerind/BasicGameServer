@@ -12,6 +12,7 @@
 #include <SFML/System.hpp>
 
 #include "Peer.hpp"
+#include "Command.hpp"
 
 class Server
 {
@@ -19,7 +20,6 @@ class Server
         Server(std::string const& propertiesFile, std::string const& logFile = "");
         ~Server();
 
-        typedef std::function<std::string(std::string)> Command;
         typedef std::function<void(sf::Packet&,Peer&)> Response;
 
         // Server
@@ -97,7 +97,6 @@ class Server
         bool mListeningState;
 
         std::map<std::string,Command> mCommands;
-        std::map<std::string,bool> mPermissions; // true = possible for non-admin user
         std::vector<std::string> mAdmins;
 
         std::vector<std::string> mBannedUsers;

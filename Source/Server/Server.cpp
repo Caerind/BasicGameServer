@@ -168,30 +168,19 @@ std::string Server::handleCommand(std::string const& command, bool server, std::
     if (args.size() == 2)
     {
         auto itr = mCommands.find(args[0]);
-        if (itr != mCommands.end() && itr->second)
+        if (itr != mCommands.end())
         {
-            if (server || isAdmin(username))
+            if (server || isAdmin(username) || !itr->second.isAdminOnly())
             {
-                return itr->second(args[1]);
+                return itr->second.execute(args[1]);
+            }
+            else if (itr->second.isAdminOnly())
+            {
+                return "You don't have the permission to do that";
             }
             else
             {
-                auto itr2 = mPermissions.find(itr->first);
-                if (itr2 != mPermissions.end())
-                {
-                    if (itr2->second)
-                    {
-                        return itr->second(args[1]);
-                    }
-                    else
-                    {
-                        return "You don't have the permission to do that";
-                    }
-                }
-                else
-                {
-                    *this << "[Server] Unknown permission for the command : " + args[0];
-                }
+                return "Unknown command";
             }
         }
     }
@@ -513,15 +502,13 @@ std::ofstream& Server::getLogStream()
 
 void Server::initCommands()
 {
-    mPermissions["stop"] = false;
-    mCommands["stop"] = [&](std::string const& args) -> std::string
+    mCommands["stop"] = Command("stop",[&](std::string const& args) -> std::string
     {
         stop();
         return "";
-    };
+    });
 
-    mPermissions["help"] = true;
-    mCommands["help"] = [&](std::string const& args) -> std::string
+    mCommands["help"] = Command("help",[&](std::string const& args) -> std::string
     {
         *this << "[Server] help : Display the list of commands";
         *this << "[Server] stop : Stop the server";
@@ -533,10 +520,9 @@ void Server::initCommands()
         *this << "[Server] op : Promote an user to admin rank";
         *this << "[Server] deop : Demote an user from admin rank";
         return std::string("/help : Display the list of commands\n/stop : Stop the server\n/say : Say something");
-    };
+    },false);
 
-    mPermissions["say"] = false;
-    mCommands["say"] = [&](std::string const& args) -> std::string
+    mCommands["say"] = Command("say",[&](std::string const& args) -> std::string
     {
         *this << "[Server] : " + args;
 
@@ -548,10 +534,9 @@ void Server::initCommands()
         sendToAll(packet);
 
         return "";
-    };
+    });
 
-    mPermissions["ban"] = false;
-    mCommands["ban"] = [&](std::string const& args) -> std::string
+    mCommands["ban"] = Command("ban",[&](std::string const& args) -> std::string
     {
         std::size_t f = args.find(" ");
         if (f != std::string::npos)
@@ -565,10 +550,9 @@ void Server::initCommands()
             *this << args + " has been banned";
         }
         return "";
-    };
+    });
 
-    mPermissions["banip"] = false;
-    mCommands["banip"] = [&](std::string const& args) -> std::string
+    mCommands["banip"] = Command("banip",[&](std::string const& args) -> std::string
     {
         std::size_t f = args.find(" ");
         std::string username, reason = "";
@@ -591,10 +575,9 @@ void Server::initCommands()
             }
         }
         return "";
-    };
+    });
 
-    mPermissions["unban"] = false;
-    mCommands["unban"] = [&](std::string const& args) -> std::string
+    mCommands["unban"] = Command("unban",[&](std::string const& args) -> std::string
     {
         std::string username = args;
         std::size_t f = args.find(" ");
@@ -604,10 +587,9 @@ void Server::initCommands()
         }
         unban(username);
         return "";
-    };
+    });
 
-    mPermissions["unbanip"] = false;
-    mCommands["unbanip"] = [&](std::string const& args) -> std::string
+    mCommands["unbanip"] = Command("unbanip",[&](std::string const& args) -> std::string
     {
         sf::IpAddress ip = sf::IpAddress(args);
         std::size_t f = args.find(" ");
@@ -617,10 +599,9 @@ void Server::initCommands()
         }
         unbanIp(ip);
         return "";
-    };
+    });
 
-    mPermissions["op"] = false;
-    mCommands["op"] = [&](std::string const& args) -> std::string
+    mCommands["op"] = Command("op",[&](std::string const& args) -> std::string
     {
         std::string username = args;
         std::size_t f = args.find(" ");
@@ -630,10 +611,9 @@ void Server::initCommands()
         }
         addAdmin(username);
         return "";
-    };
+    });
 
-    mPermissions["deop"] = false;
-    mCommands["deop"] = [&](std::string const& args) -> std::string
+    mCommands["deop"] = Command("deop",[&](std::string const& args) -> std::string
     {
         std::string username = args;
         std::size_t f = args.find(" ");
@@ -643,10 +623,9 @@ void Server::initCommands()
         }
         removeAdmin(username);
         return "";
-    };
+    });
 
-    mPermissions["kick"] = false;
-    mCommands["kick"] = [&](std::string const& args) -> std::string
+    mCommands["kick"] = Command("kick",[&](std::string const& args) -> std::string
     {
         std::size_t f = args.find(" ");
         std::string username;
@@ -669,7 +648,7 @@ void Server::initCommands()
         Packet::createKickedPacket(packet,msg);
         sendToPeer(packet,username);
         return "";
-    };
+    });
 
 }
 
