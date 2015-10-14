@@ -12,7 +12,7 @@ class Server;
 class Peer : public Connection
 {
     public:
-        typedef std::unique_ptr<Peer> Ptr;
+        typedef std::shared_ptr<Peer> Ptr;
 
         Peer();
         ~Peer();

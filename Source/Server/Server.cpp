@@ -59,6 +59,16 @@ Server::~Server()
     stop();
 }
 
+void Server::handleAdminInput()
+{
+    while (mRunning)
+    {
+        std::string command;
+        std::getline(std::cin, command);
+        handleCommand(command);
+    }
+}
+
 void Server::start()
 {
     *this << "[Server] Starting server...";
@@ -99,52 +109,35 @@ bool Server::isRunning() const
     return mRunning;
 }
 
-void Server::sendToAll(sf::Packet& packet)
+void Server::sendToAll(sf::Packet& packet, std::string const& excludeUser)
 {
     for (std::size_t i = 0; i < mPeers.size(); i++)
     {
-        if (mPeers[i]->isConnected())
+        if (mPeers[i]->isConnected() && mPeers[i]->getUsername() != excludeUser)
         {
             mPeers[i]->send(packet);
         }
-    }
-}
-
-void Server::sendToPeer(sf::Packet& packet, sf::Uint32 peerId)
-{
-    for (std::size_t i = 0; i < mPeers.size(); i++)
-    {
-        if (mPeers[i]->isConnected() && mPeers[i]->getId() == peerId)
-        {
-            mPeers[i]->send(packet);
-        }
-    }
-}
-
-void Server::sendToPeer(sf::Packet& packet, Peer& peer)
-{
-    if (peer.isConnected())
-    {
-        peer.send(packet);
     }
 }
 
 void Server::sendToPeer(sf::Packet& packet, std::string const& username)
 {
-    for (std::size_t i = 0; i < mPeers.size(); i++)
+    auto p = getPeer(username);
+    if (p != nullptr)
     {
-        if (mPeers[i]->isConnected() && mPeers[i]->getUsername() == username)
+        if (p->isConnected())
         {
-            mPeers[i]->send(packet);
+            p->send(packet);
         }
     }
 }
 
 bool Server::isConnected(std::string const& username)
 {
-    for (std::size_t i = 0; i < mPeers.size(); i++)
+    auto p = getPeer(username);
+    if (p != nullptr)
     {
-        if (mPeers[i]->isConnected() && mPeers[i]->getUsername() == username)
+        if (p->isConnected())
         {
             return true;
         }
@@ -152,29 +145,36 @@ bool Server::isConnected(std::string const& username)
     return false;
 }
 
-void Server::handleAdminInput()
+Peer::Ptr Server::getPeer(std::string const& username)
 {
-    while (mRunning)
+    for (std::size_t i = 0; i < mPeers.size(); i++)
     {
-        std::string command;
-        std::getline(std::cin, command);
-        handleCommand(command);
+        if (mPeers[i] != nullptr)
+        {
+            if (mPeers[i]->getUsername() == username)
+            {
+                return mPeers[i];
+            }
+        }
     }
+    return nullptr;
 }
 
 std::string Server::handleCommand(std::string const& command, bool server, std::string const& username)
 {
-    std::vector<std::string> args = splitArguments(command);
-    if (args.size() == 2)
+    std::vector<std::string> args = Command::getCommandName(command);
+    if (args.size() >= 1)
     {
         auto itr = mCommands.find(args[0]);
         if (itr != mCommands.end())
         {
-            if (server || isAdmin(username) || !itr->second.isAdminOnly())
+            // TODO : User Permission Level
+            // 10 represent user permission level
+            if (server || isAdmin(username) || (!itr->second.isAdminOnly() && itr->second.getPermissionLevel() <= 10))
             {
                 return itr->second.execute(args[1]);
             }
-            else if (itr->second.isAdminOnly())
+            else if (itr->second.isAdminOnly() || itr->second.getPermissionLevel() > 10)
             {
                 return "You don't have the permission to do that";
             }
@@ -185,23 +185,6 @@ std::string Server::handleCommand(std::string const& command, bool server, std::
         }
     }
     return "";
-}
-
-std::vector<std::string> Server::splitArguments(std::string const& command)
-{
-    std::vector<std::string> args;
-    std::size_t i = command.find(" ");
-    if (i != std::string::npos)
-    {
-        args.push_back(command.substr(0,i));
-        args.push_back(command.substr(i+1));
-    }
-    else
-    {
-        args.push_back(command);
-        args.push_back("");
-    }
-    return args;
 }
 
 bool Server::isAdmin(std::string const& username)
@@ -336,7 +319,7 @@ void Server::banIp(sf::IpAddress const& ip, std::string const& reason)
         {
             if (mPeers[i]->isConnected() && mPeers[i]->getRemoteAddress() == ip)
             {
-                sendToPeer(packet,*mPeers[i]);
+                mPeers[i]->send(packet);
             }
         }
     }
@@ -402,6 +385,32 @@ void Server::saveBans(std::string const& banFile)
         }
     }
     file.close();
+}
+
+void Server::kick(std::string const& username, std::string const& reason)
+{
+    Message msg;
+    msg.setEmitter("[Server]");
+    if (reason != "")
+    {
+        *this << username + " has been kicked for : " + reason;
+        msg.setContent("You have been kicked for : " + reason);
+    }
+    else
+    {
+        *this << username + " has been kicked";
+        msg.setContent("You have been kicked");
+    }
+    sf::Packet packet;
+    Packet::createKickedPacket(packet,msg);
+    sendToPeer(packet,username);
+    for (std::size_t i = 0; i < mPeers.size(); i++)
+    {
+        if (mPeers[i]->isConnected() && mPeers[i]->getUsername() == username)
+        {
+            mPeers[i]->remove();
+        }
+    }
 }
 
 std::string Server::getSettings(std::string const& id) const
@@ -538,40 +547,44 @@ void Server::initCommands()
 
     mCommands["ban"] = Command("ban",[&](std::string const& args) -> std::string
     {
-        std::size_t f = args.find(" ");
-        if (f != std::string::npos)
-        {
-            ban(args.substr(0,f),args.substr(f+1));
-            *this << args.substr(0,f) + " has been banned for : " + args.substr(f+1);
-        }
-        else
+        auto a = Command::splitArguments(args);
+        if (a.size() == 1)
         {
             ban(args);
             *this << args + " has been banned";
+        }
+        else if (a.size() > 1)
+        {
+            std::string r;
+            for (std::size_t i = 1; i < a.size(); i++)
+            {
+                r += a[i];
+            }
+            ban(a[0],r);
+            *this << a[0] + " has been banned for : " + r;
         }
         return "";
     });
 
     mCommands["banip"] = Command("banip",[&](std::string const& args) -> std::string
     {
-        std::size_t f = args.find(" ");
-        std::string username, reason = "";
-        if (f != std::string::npos)
+        auto a = Command::splitArguments(args);
+        if (a.size() >= 1)
         {
-            username = args.substr(0,f);
-            reason = args.substr(f+1);
-            *this << username + " has been banned for : " + reason;
-        }
-        else
-        {
-            username = args;
-            *this << username + " has been banned";
-        }
-        for (std::size_t i = 0; i < mPeers.size(); i++)
-        {
-            if (mPeers[i]->isConnected() && mPeers[i]->getUsername() == username)
+            std::string r = "";
+            if (a.size() > 1)
             {
-                banIp(mPeers[i]->getRemoteAddress(),reason);
+                for (std::size_t i = 1; i < a.size(); i++)
+                {
+                    r += a[i];
+                }
+            }
+            for (std::size_t i = 0; i < mPeers.size(); i++)
+            {
+                if (mPeers[i]->isConnected() && mPeers[i]->getUsername() == a[0])
+                {
+                    banIp(mPeers[i]->getRemoteAddress(),r);
+                }
             }
         }
         return "";
@@ -579,74 +592,61 @@ void Server::initCommands()
 
     mCommands["unban"] = Command("unban",[&](std::string const& args) -> std::string
     {
-        std::string username = args;
-        std::size_t f = args.find(" ");
-        if (f != std::string::npos)
+        auto a = Command::splitArguments(args);
+        if (a.size() >= 1)
         {
-            username = args.substr(0,f);
+            unban(a[0]);
         }
-        unban(username);
         return "";
     });
 
     mCommands["unbanip"] = Command("unbanip",[&](std::string const& args) -> std::string
     {
-        sf::IpAddress ip = sf::IpAddress(args);
-        std::size_t f = args.find(" ");
-        if (f != std::string::npos)
+        auto a = Command::splitArguments(args);
+        if (a.size() >= 1)
         {
-            ip = sf::IpAddress(args.substr(0,f));
+            unbanIp(sf::IpAddress(a[0]));
         }
-        unbanIp(ip);
         return "";
     });
 
     mCommands["op"] = Command("op",[&](std::string const& args) -> std::string
     {
-        std::string username = args;
-        std::size_t f = args.find(" ");
-        if (f != std::string::npos)
+        auto a = Command::splitArguments(args);
+        if (a.size() >= 1)
         {
-            username = args.substr(0,f);
+            addAdmin(a[0]);
         }
-        addAdmin(username);
         return "";
     });
 
     mCommands["deop"] = Command("deop",[&](std::string const& args) -> std::string
     {
-        std::string username = args;
-        std::size_t f = args.find(" ");
-        if (f != std::string::npos)
+        auto a = Command::splitArguments(args);
+        if (a.size() >= 1)
         {
-            username = args.substr(0,f);
+            removeAdmin(a[0]);
         }
-        removeAdmin(username);
         return "";
     });
 
     mCommands["kick"] = Command("kick",[&](std::string const& args) -> std::string
     {
-        std::size_t f = args.find(" ");
-        std::string username;
+        auto a = Command::splitArguments(args);
         Message msg;
         msg.setEmitter("[Server]");
-        if (f != std::string::npos)
+        if (a.size() >= 1)
         {
-            std::string reason = args.substr(f+1);
-            username = args.substr(0,f);
-            *this << username + " has been kicked for : " + reason;
-            msg.setContent("You have been kicked for : " + reason);
+            std::string r;
+            if (a.size() > 1)
+            {
+                for (std::size_t i = 1; i < a.size(); i++)
+                {
+                    r += a[i];
+                }
+            }
+            kick(a[0],r);
         }
-        else
-        {
-            username = args;
-            *this << username + " has been kicked";
-            msg.setContent("You have been kicked");
-        }
-        sf::Packet packet;
-        Packet::createKickedPacket(packet,msg);
-        sendToPeer(packet,username);
         return "";
     });
 
@@ -680,7 +680,7 @@ void Server::initPacketResponses()
                 msg.setEmitter("");
                 msg.setContent(res);
                 Packet::createServerMessagePacket(packet,msg);
-                sendToPeer(packet,peer);
+                peer.send(packet);
             }
         }
         else
@@ -838,7 +838,7 @@ void Server::handleDisconnections()
 	}
 }
 
-Server& operator<<(Server& server, std::string const& v)
+Server& operator <<(Server& server, std::string const& v)
 {
     std::string str = server.getTimeFormat() + v + "\n";
     if (server.isLogOpen())

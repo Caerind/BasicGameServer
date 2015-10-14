@@ -20,6 +20,10 @@ class Server
         Server(std::string const& propertiesFile, std::string const& logFile = "");
         ~Server();
 
+        void handleAdminInput();
+
+
+
         typedef std::function<void(sf::Packet&,Peer&)> Response;
 
         // Server
@@ -28,16 +32,14 @@ class Server
         bool isRunning() const;
 
         // Packet
-        void sendToAll(sf::Packet& packet);
-        void sendToPeer(sf::Packet& packet, sf::Uint32 peerId);
-        void sendToPeer(sf::Packet& packet, Peer& peer);
+        void sendToAll(sf::Packet& packet, std::string const& excludeUser = "");
         void sendToPeer(sf::Packet& packet, std::string const& username);
         bool isConnected(std::string const& username);
 
+        Peer::Ptr getPeer(std::string const& username);
+
         // Commands
-        void handleAdminInput();
         std::string handleCommand(std::string const& command, bool server = true, std::string const& username = "");
-        static std::vector<std::string> splitArguments(std::string const& command);
 
         // Admin
         bool isAdmin(std::string const& username);
@@ -55,6 +57,7 @@ class Server
         void unbanIp(sf::IpAddress const& ip);
         void loadBans(std::string const& banFile = "ban.txt");
         void saveBans(std::string const& banFile = "ban.txt");
+        void kick(std::string const& username, std::string const& reason = "");
 
         // Settings
         std::string getSettings(std::string const& id) const;
@@ -97,8 +100,8 @@ class Server
         bool mListeningState;
 
         std::map<std::string,Command> mCommands;
-        std::vector<std::string> mAdmins;
 
+        std::vector<std::string> mAdmins;
         std::vector<std::string> mBannedUsers;
         std::vector<sf::IpAddress> mBannedIps;
 
@@ -117,8 +120,8 @@ class Server
         std::size_t mConnectedPlayers;
 
         std::vector<Peer::Ptr> mPeers;
-};
 
-Server& operator<<(Server& server, std::string const& v);
+        friend Server& operator<< (Server& server, std::string const& v);
+};
 
 #endif // SERVER_HPP

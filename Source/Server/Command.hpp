@@ -1,8 +1,10 @@
 #ifndef COMMAND_HPP
 #define COMMAND_HPP
 
-#include <string>
 #include <functional>
+#include <sstream>
+#include <string>
+#include <vector>
 
 class Command
 {
@@ -10,21 +12,21 @@ class Command
         typedef std::function<std::string(const std::string&)> Function;
 
         Command();
-        Command(std::string const& name, Function func, bool adminOnly = true);
+        Command(std::string const& name, Function func, bool adminOnly = true, int permissionLevel = 0);
 
         std::string execute(std::string const& args);
 
-        void setName(std::string const& name);
-        void setFunction(Function func);
-        void setAdminOnly(bool adminOnly);
-
-        std::string getName() const;
         bool isAdminOnly() const;
+        int getPermissionLevel() const;
+
+        static std::vector<std::string> getCommandName(std::string const& command);
+        static std::vector<std::string> splitArguments(std::string const& arguments);
 
     protected:
         std::string mName;
         Function mFunction;
         bool mAdminOnly;
+        int mPermissionLevel;
 };
 
 #endif // COMMAND_HPP

@@ -11,6 +11,7 @@ class Message
 {
     public:
         Message();
+        Message(std::string const& emitter, std::string const& content);
 
         std::string getEmitter() const;
         void setEmitter(std::string const& emitter);

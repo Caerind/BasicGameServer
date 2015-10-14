@@ -5,6 +5,13 @@ Message::Message()
     setActualTime();
 }
 
+Message::Message(std::string const& emitter, std::string const& content)
+: mEmitter(emitter)
+, mContent(content)
+{
+    setActualTime();
+}
+
 std::string Message::getEmitter() const
 {
     return mEmitter;

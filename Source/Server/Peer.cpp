@@ -29,7 +29,7 @@ bool Peer::connect(Server& server)
 
                 // Test login AND isn't ban AND isn't banip
                 // TODO : Test login in a db
-                if (true && !server.isBanned(username) && !server.isBannedIp(ip))
+                if (true && !server.isBanned(username) && !server.isBannedIp(ip) && !server.isConnected(username))
                 {
                     if(mSocketOut.connect(ip,port,sf::seconds(5.f)) == sf::Socket::Status::Done)
                     {
