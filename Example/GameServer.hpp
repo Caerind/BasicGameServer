@@ -1,7 +1,7 @@
 #ifndef GAMESERVER_HPP
 #define GAMESERVER_HPP
 
-#include "Server.hpp"
+#include "../Source/Server.hpp"
 
 class GameServer : public Server
 {

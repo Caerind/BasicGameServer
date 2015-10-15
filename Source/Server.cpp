@@ -160,7 +160,7 @@ std::string Server::handleCommand(std::string const& command, bool server, std::
         {
             if (server)
             {
-                *this << "[Server] Unknow command, try \"help\" to see the list of commands";
+                *this << "[Server] Unknown command, try \"help\" for list of commands";
             }
             return "Unknown command";
         }
@@ -257,23 +257,26 @@ void Server::ban(std::string const& username, std::string const& reason)
     {
         mBannedUsers.push_back(username);
 
+        std::string s = "";
+        if (reason != "")
+        {
+            s = " for : " + reason;
+        }
+
         // Tell the user he has been banned
         if (isConnected(username))
         {
-            Message msg;
-            msg.setEmitter("[Server]");
-            if (reason != "")
-            {
-                msg.setContent("You have been banned for : " + reason);
-            }
-            else
-            {
-                msg.setContent("You have been banned");
-            }
             sf::Packet packet;
-            Packet::createBannedPacket(packet,msg);
+            Packet::createBannedPacket(packet,Message("", "You have been banned" + s));
             sendToPeer(packet,username);
         }
+
+        // Tell everyone he has been banned
+        sf::Packet packet;
+        Packet::createServerMessagePacket(packet,Message("", username + " has been banned" + s));
+        sendToAll(packet,username);
+
+        *this << "[Server] " + username + " has been banned" + s;
     }
 }
 
@@ -283,19 +286,15 @@ void Server::banIp(sf::IpAddress const& ip, std::string const& reason)
     {
         mBannedIps.push_back(ip);
 
-        // Tell the user he has been banned
-        Message msg;
-        msg.setEmitter("[Server]");
+        std::string s = "";
         if (reason != "")
         {
-            msg.setContent("You have been banned for : " + reason);
+            s = " for : " + reason;
         }
-        else
-        {
-            msg.setContent("You have been banned");
-        }
+
+        // Tell the user he has been banned
         sf::Packet packet;
-        Packet::createBannedPacket(packet,msg);
+        Packet::createBannedPacket(packet,Message("", "Your IP (" + ip.toString() + ") has been banned" + s));
         for (std::size_t i = 0; i < mPeers.size(); i++)
         {
             if (mPeers[i]->isConnected() && mPeers[i]->getRemoteAddress() == ip)
@@ -303,6 +302,13 @@ void Server::banIp(sf::IpAddress const& ip, std::string const& reason)
                 mPeers[i]->send(packet);
             }
         }
+
+        // Tell everyone ip has been banned
+        packet.clear();
+        Packet::createServerMessagePacket(packet,Message("", "IP (" + ip.toString() + ") has been banned" + s));
+        sendToAll(packet);
+
+        *this << "[Server] IP (" + ip.toString() + ") has been banned" + s;
     }
 }
 
@@ -370,27 +376,32 @@ void Server::saveBans(std::string const& banFile)
 
 void Server::kick(std::string const& username, std::string const& reason)
 {
-    Message msg;
-    msg.setEmitter("[Server]");
-    if (reason != "")
+    if (isConnected(username))
     {
-        *this << username + " has been kicked for : " + reason;
-        msg.setContent("You have been kicked for : " + reason);
-    }
-    else
-    {
-        *this << username + " has been kicked";
-        msg.setContent("You have been kicked");
-    }
-    sf::Packet packet;
-    Packet::createKickedPacket(packet,msg);
-    sendToPeer(packet,username);
-    for (std::size_t i = 0; i < mPeers.size(); i++)
-    {
-        if (mPeers[i]->isConnected() && mPeers[i]->getUsername() == username)
+        std::string s = "";
+        if (reason != "")
         {
-            mPeers[i]->remove();
+            s = " for : " + reason;
         }
+
+        // Kick him
+        sf::Packet packet;
+        Packet::createKickedPacket(packet, Message("", "You have been kicked" + s));
+        for (std::size_t i = 0; i < mPeers.size(); i++)
+        {
+            if (mPeers[i]->isConnected() && mPeers[i]->getUsername() == username)
+            {
+                mPeers[i]->send(packet);
+                mPeers[i]->remove();
+            }
+        }
+
+        // Send to all
+        packet.clear();
+        Packet::createServerMessagePacket(packet, Message("", username + " has been kicked" + s));
+        sendToAll(packet,username);
+
+        *this << "[Server] " + username + " has been kicked" + s;
     }
 }
 
@@ -464,7 +475,7 @@ std::string Server::getTimeFormat()
     time_t rawtime;
     struct tm* timeinfo;
     char buffer[80];
-    time (&rawtime);
+    time(&rawtime);
     timeinfo = localtime(&rawtime);
     std::string timeformat = "[%x][%X] ";
     strftime(buffer,80,timeformat.c_str(),timeinfo);
@@ -509,18 +520,15 @@ void Server::initCommands()
         *this << "[Server] unbanip : Unban an ip address";
         *this << "[Server] op : Promote an user to admin rank";
         *this << "[Server] deop : Demote an user from admin rank";
-        return std::string("/help : Display the list of commands\n/stop : Stop the server\n/say : Say something");
+        return std::string("/help : Display the list of commands\n/say : Say something\n/me : Describe");
     },false);
 
     mCommands["say"] = Command("say",[&](std::string const& args) -> std::string
     {
         *this << "[Server] : " + args;
 
-        Message msg;
-        msg.setEmitter("[Server]");
-        msg.setContent(args);
         sf::Packet packet;
-        Packet::createServerMessagePacket(packet,msg);
+        Packet::createServerMessagePacket(packet, Message("[Server]",args));
         sendToAll(packet);
 
         return "";
@@ -529,12 +537,7 @@ void Server::initCommands()
     mCommands["ban"] = Command("ban",[&](std::string const& args) -> std::string
     {
         auto a = Command::splitArguments(args);
-        if (a.size() == 1)
-        {
-            ban(args);
-            *this << args + " has been banned";
-        }
-        else if (a.size() > 1)
+        if (a.size() >= 1)
         {
             std::string r;
             for (std::size_t i = 1; i < a.size(); i++)
@@ -542,7 +545,6 @@ void Server::initCommands()
                 r += a[i];
             }
             ban(a[0],r);
-            *this << a[0] + " has been banned for : " + r;
         }
         return "";
     });
@@ -552,13 +554,10 @@ void Server::initCommands()
         auto a = Command::splitArguments(args);
         if (a.size() >= 1)
         {
-            std::string r = "";
-            if (a.size() > 1)
+            std::string r;
+            for (std::size_t i = 1; i < a.size(); i++)
             {
-                for (std::size_t i = 1; i < a.size(); i++)
-                {
-                    r += a[i];
-                }
+                r += a[i];
             }
             for (std::size_t i = 0; i < mPeers.size(); i++)
             {
@@ -614,22 +613,28 @@ void Server::initCommands()
     mCommands["kick"] = Command("kick",[&](std::string const& args) -> std::string
     {
         auto a = Command::splitArguments(args);
-        Message msg;
-        msg.setEmitter("[Server]");
         if (a.size() >= 1)
         {
             std::string r;
-            if (a.size() > 1)
+            for (std::size_t i = 1; i < a.size(); i++)
             {
-                for (std::size_t i = 1; i < a.size(); i++)
-                {
-                    r += a[i];
-                }
+                r += a[i];
             }
             kick(a[0],r);
         }
         return "";
     });
+
+    mCommands["me"] = Command("me",[&](std::string const& args) -> std::string
+    {
+        *this << "[Server] : *" + args;
+
+        sf::Packet packet;
+        Packet::createServerMessagePacket(packet, Message("", "*" + args));
+        sendToAll(packet);
+
+        return "";
+    },false);
 
 }
 
@@ -658,9 +663,7 @@ void Server::initPacketResponses()
             std::string res = handleCommand(msg.getContent().substr(1), false, peer.getUsername());
             if (res != "")
             {
-                msg.setEmitter("");
-                msg.setContent(res);
-                Packet::createServerMessagePacket(packet,msg);
+                Packet::createServerMessagePacket(packet, Message("",res));
                 peer.send(packet);
             }
         }

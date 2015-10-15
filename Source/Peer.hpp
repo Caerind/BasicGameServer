@@ -4,8 +4,8 @@
 #include <iostream>
 #include <memory>
 
-#include "../Connection.hpp"
-#include "../PacketType.hpp"
+#include "Connection.hpp"
+#include "PacketType.hpp"
 
 class Server;
 
@@ -15,7 +15,7 @@ class Peer : public Connection
         typedef std::shared_ptr<Peer> Ptr;
 
         Peer();
-        ~Peer();
+        virtual ~Peer();
 
         bool connect(Server& server);
         void disconnect();

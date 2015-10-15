@@ -132,28 +132,6 @@ void Client::handlePackets()
     }
 }
 
-void Client::handleChat()
-{
-    while (isConnected())
-    {
-        std::string command;
-        std::getline(std::cin, command);
-
-        if (command == "stop" || !isConnected())
-        {
-            break;
-        }
-
-        Message msg;
-        msg.setEmitter(getUsername());
-        msg.setContent(command);
-
-        sf::Packet packet;
-        Packet::createClientMessagePacket(packet,msg);
-        send(packet);
-    }
-}
-
 sf::IpAddress Client::getRemoteAddress() const
 {
     return mSocketOut.getRemoteAddress();

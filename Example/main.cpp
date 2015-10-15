@@ -1,14 +1,11 @@
-#include <string>
-#include <iostream>
-#include <SFML/Network/IpAddress.hpp>
-#include "Client/Client.hpp"
-#include "Server/GameServer.hpp"
+#include "GameClient.hpp"
+#include "GameServer.hpp"
 
 int main(int argc, char *argv[])
 {
     if (argc != 1)
     {
-        Client client;
+        GameClient client;
         int retry = 3;
         while (retry > 0)
         {
