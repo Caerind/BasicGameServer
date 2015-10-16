@@ -1,12 +1,13 @@
 #ifndef PEER_HPP
 #define PEER_HPP
 
-#include <iostream>
+// Standards Libs
 #include <memory>
 
+// Own files
 #include "Connection.hpp"
-#include "PacketType.hpp"
 
+// Declaration
 class Server;
 
 class Peer : public Connection
@@ -17,18 +18,14 @@ class Peer : public Connection
         Peer();
         virtual ~Peer();
 
-        bool connect(Server& server);
-        void disconnect();
+        virtual bool connect(Server& server);
 
         void remove();
         bool needRemove() const;
 
-        sf::IpAddress getRemoteAddress() const;
-
-        std::string getUsername() const;
+        sf::IpAddress getRemoteAddress();
 
     protected:
-        std::string mUsername;
         bool mRemove;
 };
 

@@ -1,11 +1,13 @@
 #ifndef CONNECTION_HPP
 #define CONNECTION_HPP
 
+// Standards Libs
 #include <queue>
 
 // SFML Network
 #include <SFML/Network/IpAddress.hpp>
 #include <SFML/Network/Packet.hpp>
+#include <SFML/Network/SocketSelector.hpp>
 #include <SFML/Network/TcpSocket.hpp>
 
 // SFML System
@@ -30,7 +32,7 @@ class Connection
 
         sf::Uint32 getId() const;
 
-        virtual sf::IpAddress getRemoteAddress() const = 0;
+        virtual sf::IpAddress getRemoteAddress() = 0;
 
         sf::TcpSocket& getSocketIn();
         sf::TcpSocket& getSocketOut();

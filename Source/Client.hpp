@@ -1,10 +1,12 @@
 #ifndef CLIENT_HPP
 #define CLIENT_HPP
 
-#include <iostream>
+// Standards Libs
+#include <functional>
+#include <map>
 
+// Own files
 #include "Connection.hpp"
-#include "PacketType.hpp"
 
 class Client : public Connection
 {
@@ -12,19 +14,14 @@ class Client : public Connection
         Client();
         virtual ~Client();
 
-        bool connect(sf::IpAddress ip, sf::Uint32 port, std::string const& username, std::string const& password);
-        void disconnect(bool sendPacket);
-
         void handlePackets();
 
-        sf::IpAddress getRemoteAddress() const;
-
-        std::string getUsername() const;
+        sf::IpAddress getRemoteAddress();
 
     protected:
         sf::Thread mThread;
 
-        std::string mUsername;
+        std::map<sf::Int32,std::function<void(sf::Packet&)>> mPacketResponses;
 };
 
 #endif // CLIENT_HPP
