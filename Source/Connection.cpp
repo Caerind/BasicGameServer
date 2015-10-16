@@ -7,6 +7,7 @@ Connection::Connection()
 , mReceiveThread(&Connection::receive,this)
 , mSendThread(&Connection::send,this)
 , mId(++mNumberOfCreations)
+, mTimeout(sf::seconds(5.f))
 {
 }
 
@@ -41,10 +42,13 @@ bool Connection::isConnected() const
 bool Connection::connect()
 {
     mConnected = true;
+
     mReceiveClock.restart();
     mSendClock.restart();
+
     mReceiveThread.launch();
     mSendThread.launch();
+
     return mConnected;
 }
 
@@ -83,16 +87,6 @@ sf::TcpSocket& Connection::getSocketOut()
     return mSocketOut;
 }
 
-sf::Time Connection::getLastReceivePacketTime() const
-{
-    return mReceiveClock.getElapsedTime();
-}
-
-sf::Time Connection::getLastSendPacketTime() const
-{
-    return mSendClock.getElapsedTime();
-}
-
 void Connection::receive()
 {
     sf::SocketSelector selector;
@@ -100,18 +94,26 @@ void Connection::receive()
 
     while (mConnected)
     {
-        if (!selector.wait(sf::seconds(1.f)))
+        if (!selector.wait(sf::seconds(1.f)) || !selector.isReady(mSocketIn))
+        {
             continue;
-
-        if (!selector.isReady(mSocketIn))
-            continue;
+        }
 
         sf::Packet packet;
         if (mSocketIn.receive(packet) == sf::Socket::Done)
         {
             sf::Lock lock(mReceiveMutex);
-            mIncoming.emplace(std::move(packet));
+            if (!packet.endOfPacket())
+            {
+                mIncoming.emplace(std::move(packet));
+            }
             mReceiveClock.restart();
+        }
+
+        if (mReceiveClock.getElapsedTime() >= mTimeout)
+        {
+            sf::Lock lock(mReceiveMutex);
+            mConnected = false;
         }
     }
 }
@@ -136,12 +138,27 @@ void Connection::send()
         if (mSendClock.getElapsedTime() > sf::seconds(1.f))
         {
             sf::Packet packet;
-            Packet::createNonePacket(packet);
             if (mSocketOut.send(packet) == sf::Socket::Done)
             {
                 sf::Lock lock(mSendMutex);
                 mSendClock.restart();
             }
         }
+
+        if (mSendClock.getElapsedTime() >= mTimeout)
+        {
+            sf::Lock lock(mSendMutex);
+            mConnected = false;
+        }
     }
+}
+
+void Connection::setTimeout(sf::Time const& timeout)
+{
+    mTimeout = timeout;
+}
+
+sf::Time Connection::getTimeout() const
+{
+    return mTimeout;
 }

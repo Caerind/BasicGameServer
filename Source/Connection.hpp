@@ -3,10 +3,17 @@
 
 #include <queue>
 
-#include <SFML/System.hpp>
-#include <SFML/Network.hpp>
+// SFML Network
+#include <SFML/Network/IpAddress.hpp>
+#include <SFML/Network/Packet.hpp>
+#include <SFML/Network/TcpSocket.hpp>
 
-#include "PacketType.hpp"
+// SFML System
+#include <SFML/System/Clock.hpp>
+#include <SFML/System/Lock.hpp>
+#include <SFML/System/Mutex.hpp>
+#include <SFML/System/Thread.hpp>
+#include <SFML/System/Time.hpp>
 
 class Connection
 {
@@ -19,7 +26,7 @@ class Connection
 
         bool isConnected() const;
         bool connect();
-        void disconnect();
+        virtual void disconnect();
 
         sf::Uint32 getId() const;
 
@@ -28,10 +35,10 @@ class Connection
         sf::TcpSocket& getSocketIn();
         sf::TcpSocket& getSocketOut();
 
-        sf::Time getLastReceivePacketTime() const;
-        sf::Time getLastSendPacketTime() const;
+        void setTimeout(sf::Time const& timeout);
+        sf::Time getTimeout() const;
 
-    protected:
+    private:
         bool mConnected;
 
         void receive();
@@ -50,6 +57,8 @@ class Connection
 
         static sf::Uint32 mNumberOfCreations;
         const sf::Uint32 mId;
+
+        sf::Time mTimeout;
 };
 
 #endif // CONNECTION_HPP
