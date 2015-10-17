@@ -1,34 +1,28 @@
 #include "Command.hpp"
 
-Command::Command()
-{
-}
-
-Command::Command(std::string const& name, Command::Function func, bool adminOnly, int permissionLevel)
+Command::Command(std::string const& name, Command::Function func, bool adminOnly)
 : mName(name)
 , mFunction(func)
 , mAdminOnly(adminOnly)
-, mPermissionLevel(permissionLevel)
 {
 }
 
-std::string Command::execute(std::string const& args)
+std::string Command::getName() const
+{
+    return mName;
+}
+
+void Command::execute(std::string const& args)
 {
     if (mFunction)
     {
-        return mFunction(args);
+        mFunction(args);
     }
-    return "";
 }
 
 bool Command::isAdminOnly() const
 {
     return mAdminOnly;
-}
-
-int Command::getPermissionLevel() const
-{
-    return mPermissionLevel;
 }
 
 std::vector<std::string> Command::getCommandName(std::string const& command)

@@ -1,26 +1,35 @@
 #ifndef SERVER_HPP
 #define SERVER_HPP
 
+// Standards Libs
 #include <ctime>
-#include <vector>
 #include <fstream>
-#include <sstream>
-#include <map>
 #include <functional>
+#include <map>
+#include <sstream>
+#include <vector>
 
-#include <SFML/Network.hpp>
-#include <SFML/System.hpp>
+// SFML Network
+#include <SFML/Network/IpAddress.hpp>
+#include <SFML/Network/Packet.hpp>
+#include <SFML/Network/TcpListener.hpp>
 
-#include "Peer.hpp"
+// SFML System
+#include <SFML/System/Clock.hpp>
+#include <SFML/System/Thread.hpp>
+#include <SFML/System/Time.hpp>
+
+// Own files
 #include "Command.hpp"
+#include "Peer.hpp"
 
 class Server
 {
     public:
-        Server(std::string const& propertiesFile, std::string const& logFile = "");
-        ~Server();
-
         typedef std::function<void(sf::Packet&,Peer&)> Response;
+
+        Server(std::string const& logFile = "");
+        ~Server();
 
         // Server
         virtual void load();
@@ -31,49 +40,17 @@ class Server
         // Packet
         void sendToAll(sf::Packet& packet, std::string const& excludeUser = "");
         void sendToPeer(sf::Packet& packet, std::string const& username);
-        bool isConnected(std::string const& username);
+        void sendToIp(sf::Packet& packet, sf::IpAddress const& ip);
 
+        // Peer Management
         Peer::Ptr getPeer(std::string const& username);
+        bool isConnected(std::string const& username);
 
         // Commands
         std::string handleCommand(std::string const& command, bool server = true, std::string const& username = "");
 
-        // Admin
-        bool isAdmin(std::string const& username);
-        void addAdmin(std::string const& username);
-        void removeAdmin(std::string const& username);
-        void loadAdmins(std::string const& adminFile = "admin.txt");
-        void saveAdmins(std::string const& adminFile = "admin.txt");
-
-        // Ban
-        bool isBanned(std::string const& username);
-        bool isBannedIp(sf::IpAddress const& ip);
-        void ban(std::string const& username, std::string const& reason = "");
-        void banIp(sf::IpAddress const& ip, std::string const& reason = "");
-        void unban(std::string const& username);
-        void unbanIp(sf::IpAddress const& ip);
-        void loadBans(std::string const& banFile = "ban.txt");
-        void saveBans(std::string const& banFile = "ban.txt");
-        void kick(std::string const& username, std::string const& reason = "");
-
-        // Settings
-        std::string getSettings(std::string const& id) const;
-        void setSettings(std::string const& id, std::string const& value);
-        bool loadSettings();
-        bool saveSettings();
-        virtual void createSettings();
-
-        // Output
-        static std::string getTimeFormat();
-
-        // Log
-        bool openLog(std::string const& logFile = "");
-        bool isLogOpen() const;
-        std::ofstream& getLogStream();
-
     protected:
-        virtual void initCommands();
-        virtual void initPacketResponses();
+        void write(std::string const& message);
 
         virtual void onConnection(Peer& peer);
         virtual void onDisconnection(Peer& peer);
@@ -84,8 +61,6 @@ class Server
         void update(sf::Time dt);
 
         void handlePackets();
-        void handlePacket(sf::Packet& packet, Peer& peer);
-
         void handleConnections();
         void handleDisconnections();
 
@@ -96,29 +71,22 @@ class Server
         sf::TcpListener mListener;
         bool mListeningState;
 
-        std::map<std::string,Command> mCommands;
-
-        std::vector<std::string> mAdmins;
-        std::vector<std::string> mBannedUsers;
-        std::vector<sf::IpAddress> mBannedIps;
-
-        std::map<sf::Int32,Response> mPacketResponses;
-
-        std::map<std::string,std::string> mSettings;
-        std::string mSettingsFile;
+        std::size_t mConnectedPlayers;
+        std::vector<Peer::Ptr> mPeers;
 
         std::ofstream mLog;
 
         std::size_t mMaxPlayers;
         std::size_t mPort;
-        sf::Time mClientTimeoutTime;
         sf::Time mUpdateInterval;
 
-        std::size_t mConnectedPlayers;
+        std::vector<std::string> mAdmins;
+        std::vector<std::string> mBannedUsers;
+        std::vector<sf::IpAddress> mBannedIps;
 
-        std::vector<Peer::Ptr> mPeers;
+        std::map<std::string,Command> mCommands;
+        std::map<sf::Int32,Response> mPacketResponses;
 
-        friend Server& operator<< (Server& server, std::string const& v);
 };
 
 #endif // SERVER_HPP
