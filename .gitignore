@@ -6,3 +6,5 @@ obj*
 *.cbp
 *.depend
 *~
+*.log
+*.dat
