@@ -51,7 +51,7 @@ class Server
         bool isConnected(std::string const& username);
 
         // Commands
-        std::string handleCommand(std::string const& command, bool server = true, std::string const& username = "");
+        std::string handleCommand(std::string const& command, bool server = true, std::string const& username = "[Server]");
 
     protected:
         void write(std::string const& message);

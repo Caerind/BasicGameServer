@@ -437,10 +437,10 @@ void GameServer::initCommands()
 
     mCommands["me"] = Command("me",[&](std::string const& args, std::string const& executant, bool isServer)
     {
-        write("[Server] : *" + args);
+        write("[Server] : *" + executant + " " + args);
 
         sf::Packet packet;
-        Packet::createServerMessagePacket(packet, Message("", "*" + args));
+        Packet::createServerMessagePacket(packet, Message("", "*" + executant + " " + args));
         sendToAll(packet);
     },false);
 }
