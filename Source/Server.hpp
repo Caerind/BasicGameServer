@@ -5,7 +5,9 @@
 #include <ctime>
 #include <fstream>
 #include <functional>
+#include <iostream>
 #include <map>
+#include <memory>
 #include <sstream>
 #include <vector>
 
@@ -16,6 +18,7 @@
 
 // SFML System
 #include <SFML/System/Clock.hpp>
+#include <SFML/System/Sleep.hpp>
 #include <SFML/System/Thread.hpp>
 #include <SFML/System/Time.hpp>
 
@@ -23,10 +26,11 @@
 #include "Command.hpp"
 #include "Peer.hpp"
 
+template <typename T>
 class Server
 {
     public:
-        typedef std::function<void(sf::Packet&,Peer&)> Response;
+        typedef std::function<void(sf::Packet&,T&)> Response;
 
         Server(std::string const& logFile = "");
         ~Server();
@@ -43,7 +47,7 @@ class Server
         void sendToIp(sf::Packet& packet, sf::IpAddress const& ip);
 
         // Peer Management
-        Peer::Ptr getPeer(std::string const& username);
+        std::shared_ptr<T> getPeer(std::string const& username);
         bool isConnected(std::string const& username);
 
         // Commands
@@ -52,8 +56,8 @@ class Server
     protected:
         void write(std::string const& message);
 
-        virtual void onConnection(Peer& peer);
-        virtual void onDisconnection(Peer& peer);
+        virtual void onConnection(T& peer);
+        virtual void onDisconnection(T& peer);
 
         void setListening(bool enable);
 
@@ -72,7 +76,7 @@ class Server
         bool mListeningState;
 
         std::size_t mConnectedPlayers;
-        std::vector<Peer::Ptr> mPeers;
+        std::vector<std::shared_ptr<T>> mPeers;
 
         std::ofstream mLog;
 
@@ -88,5 +92,7 @@ class Server
         std::map<sf::Int32,Response> mPacketResponses;
 
 };
+
+#include "Server.inl"
 
 #endif // SERVER_HPP

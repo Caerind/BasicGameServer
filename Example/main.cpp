@@ -9,13 +9,17 @@ int main(int argc, char *argv[])
         int retry = 3;
         while (retry > 0)
         {
+            std::cout << "Connecting..." << std::endl;
             if (client.connect(sf::IpAddress::LocalHost,4567,"Cmdu76","test"))
             {
+                std::cout << "Connected !" << std::endl;
                 client.handleChat();
                 retry = 0;
+                std::cout << "Disconnected" << std::endl;
             }
             else
             {
+                std::cout << "Connection failed" << std::endl;
                 retry--;
             }
         }

@@ -6,11 +6,9 @@
 
 // Own files
 #include "../Source/Peer.hpp"
+#include "../Source/Server.hpp"
 
-// Declaration
-class Server;
-
-class GamePeer : Peer
+class GamePeer : public Peer
 {
     public:
         typedef std::shared_ptr<GamePeer> Ptr;
@@ -18,7 +16,7 @@ class GamePeer : Peer
         GamePeer();
         virtual ~GamePeer();
 
-        virtual bool connect(Server& server);
+        virtual bool connect(Server<GamePeer>& server);
 
         std::string getUsername() const;
 

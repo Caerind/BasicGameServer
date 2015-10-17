@@ -11,7 +11,7 @@ Peer::~Peer()
     disconnect();
 }
 
-bool Peer::connect(Server& server)
+bool Peer::connect(Server<Peer>& server)
 {
     return isConnected();
 }
@@ -30,9 +30,3 @@ sf::IpAddress Peer::getRemoteAddress()
 {
     return getSocketIn().getRemoteAddress();
 }
-
-std::string Peer::getUsername() const
-{
-    return mUsername;
-}
-

@@ -11,7 +11,7 @@ GamePeer::~GamePeer()
     disconnect();
 }
 
-bool GamePeer::connect(Server& server)
+bool GamePeer::connect(Server<GamePeer>& server)
 {
     if (!isConnected())
     {

@@ -1,6 +1,5 @@
-#include "Server.hpp"
-
-Server::Server(std::string const& logFile)
+template <typename T>
+Server<T>::Server(std::string const& logFile)
 : mThread(&Server::run,this)
 , mRunning(false)
 , mListener()
@@ -17,25 +16,26 @@ Server::Server(std::string const& logFile)
     write("[Server] Loading server");
 
     mListener.setBlocking(false);
-	mPeers[0].reset(new Peer());
-
-    loadFromFile();
+	mPeers[0].reset(new T());
 
     load();
 
-    write("[Server] Loaded in " + to_string(clock.restart().asSeconds()) + "s !");
+    //write("[Server] Loaded in " + to_string(clock.restart().asSeconds()) + "s !");
 }
 
-Server::~Server()
+template <typename T>
+Server<T>::~Server()
 {
     stop();
 }
 
-void Server::load()
+template <typename T>
+void Server<T>::load()
 {
 }
 
-void Server::start()
+template <typename T>
+void Server<T>::start()
 {
     mRunning = true;
     mThread.launch();
@@ -43,7 +43,8 @@ void Server::start()
     write("[Server] Server started !");
 }
 
-void Server::stop()
+template <typename T>
+void Server<T>::stop()
 {
     if (mRunning)
     {
@@ -51,8 +52,9 @@ void Server::stop()
 
         setListening(false);
 
+        // TODO : Fix it
         sf::Packet packet;
-        Packet::createServerStoppedPacket(packet);
+        //Packet::createServerStoppedPacket(packet);
         sendToAll(packet);
 
         mRunning = false;
@@ -61,18 +63,18 @@ void Server::stop()
 
         write("[Server] Server stopped !");
 
-        saveAdmins();
-        saveBans();
         mLog.close();
     }
 }
 
-bool Server::isRunning() const
+template <typename T>
+bool Server<T>::isRunning() const
 {
     return mRunning;
 }
 
-void Server::sendToAll(sf::Packet& packet, std::string const& excludeUser)
+template <typename T>
+void Server<T>::sendToAll(sf::Packet& packet, std::string const& excludeUser)
 {
     for (std::size_t i = 0; i < mPeers.size(); i++)
     {
@@ -83,7 +85,8 @@ void Server::sendToAll(sf::Packet& packet, std::string const& excludeUser)
     }
 }
 
-void Server::sendToPeer(sf::Packet& packet, std::string const& username)
+template <typename T>
+void Server<T>::sendToPeer(sf::Packet& packet, std::string const& username)
 {
     auto p = getPeer(username);
     if (p != nullptr)
@@ -95,7 +98,8 @@ void Server::sendToPeer(sf::Packet& packet, std::string const& username)
     }
 }
 
-void Server::sendToIp(sf::Packet& packet, sf::IpAddress const& ip)
+template <typename T>
+void Server<T>::sendToIp(sf::Packet& packet, sf::IpAddress const& ip)
 {
     for (std::size_t i = 0; i < mPeers.size(); i++)
     {
@@ -106,7 +110,8 @@ void Server::sendToIp(sf::Packet& packet, sf::IpAddress const& ip)
     }
 }
 
-Peer::Ptr Server::getPeer(std::string const& username)
+template <typename T>
+std::shared_ptr<T> Server<T>::getPeer(std::string const& username)
 {
     for (std::size_t i = 0; i < mPeers.size(); i++)
     {
@@ -118,7 +123,8 @@ Peer::Ptr Server::getPeer(std::string const& username)
     return nullptr;
 }
 
-bool Server::isConnected(std::string const& username)
+template <typename T>
+bool Server<T>::isConnected(std::string const& username)
 {
     auto p = getPeer(username);
     if (p != nullptr)
@@ -131,7 +137,8 @@ bool Server::isConnected(std::string const& username)
     return false;
 }
 
-std::string Server::handleCommand(std::string const& command, bool server, std::string const& username)
+template <typename T>
+std::string Server<T>::handleCommand(std::string const& command, bool server, std::string const& username)
 {
     std::vector<std::string> args = Command::getCommandName(command);
     if (args.size() >= 1)
@@ -139,9 +146,7 @@ std::string Server::handleCommand(std::string const& command, bool server, std::
         auto itr = mCommands.find(args[0]);
         if (itr != mCommands.end())
         {
-            // TODO : User Permission Level
-            // 10 represent user permission level
-            if (server || isAdmin(username) || (!itr->second.isAdminOnly() && itr->second.getPermissionLevel() <= 10))
+            if (server || !itr->second.isAdminOnly())
             {
                 itr->second.execute(args[1]);
             }
@@ -162,7 +167,8 @@ std::string Server::handleCommand(std::string const& command, bool server, std::
     return "";
 }
 
-void Server::write(std::string const& message)
+template <typename T>
+void Server<T>::write(std::string const& message)
 {
     // Get Time To Format
     time_t rawtime;
@@ -181,15 +187,18 @@ void Server::write(std::string const& message)
     }
 }
 
-void Server::onConnection(Peer& peer)
+template <typename T>
+void Server<T>::onConnection(T& peer)
 {
 }
 
-void Server::onDisconnection(Peer& peer)
+template <typename T>
+void Server<T>::onDisconnection(T& peer)
 {
 }
 
-void Server::setListening(bool enable)
+template <typename T>
+void Server<T>::setListening(bool enable)
 {
     if (enable) // Check if it isn't already listening
 	{
@@ -205,7 +214,8 @@ void Server::setListening(bool enable)
 	}
 }
 
-void Server::run()
+template <typename T>
+void Server<T>::run()
 {
     setListening(true);
 
@@ -227,11 +237,13 @@ void Server::run()
     }
 }
 
-void Server::update(sf::Time dt)
+template <typename T>
+void Server<T>::update(sf::Time dt)
 {
 }
 
-void Server::handlePackets()
+template <typename T>
+void Server<T>::handlePackets()
 {
     for (std::size_t i = 0; i < mConnectedPlayers; i++)
 	{
@@ -246,7 +258,7 @@ void Server::handlePackets()
                 auto itr = mPacketResponses.find(packetType);
                 if (itr != mPacketResponses.end() && itr->second)
                 {
-                    itr->second(packet,peer);
+                    itr->second(packet,*mPeers[i]);
                 }
 
                 packet.clear();
@@ -255,7 +267,8 @@ void Server::handlePackets()
 	}
 }
 
-void Server::handleConnections()
+template <typename T>
+void Server<T>::handleConnections()
 {
     if (!mListeningState)
     {
@@ -276,13 +289,14 @@ void Server::handleConnections()
             }
             else
             {
-                mPeers.push_back(Peer::Ptr(new Peer()));
+                mPeers.push_back(std::shared_ptr<T>(new T()));
             }
         }
 	}
 }
 
-void Server::handleDisconnections()
+template <typename T>
+void Server<T>::handleDisconnections()
 {
     bool removePeer = false;
 
@@ -306,7 +320,7 @@ void Server::handleDisconnections()
     {
         if (mConnectedPlayers < mMaxPlayers)
         {
-            mPeers.push_back(Peer::Ptr(new Peer()));
+            mPeers.push_back(std::shared_ptr<T>(new T()));
             setListening(true);
         }
     }
