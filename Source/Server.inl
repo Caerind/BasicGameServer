@@ -20,7 +20,9 @@ Server<T>::Server(std::string const& logFile)
 
     load();
 
-    //write("[Server] Loaded in " + to_string(clock.restart().asSeconds()) + "s !");
+    std::ostringstream oss;
+    oss << clock.restart().asSeconds();
+    write("[Server] Loaded in " + oss.str() + "s !");
 }
 
 template <typename T>
@@ -53,9 +55,11 @@ void Server<T>::stop()
         setListening(false);
 
         // TODO : Fix it
+        /*
         sf::Packet packet;
-        //Packet::createServerStoppedPacket(packet);
+        Packet::createServerStoppedPacket(packet);
         sendToAll(packet);
+        */
 
         mRunning = false;
 

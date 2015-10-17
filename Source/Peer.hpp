@@ -1,9 +1,6 @@
 #ifndef PEER_HPP
 #define PEER_HPP
 
-// Standards Libs
-#include <memory>
-
 // Own files
 #include "Connection.hpp"
 
@@ -14,8 +11,6 @@ class Server;
 class Peer : public Connection
 {
     public:
-        typedef std::shared_ptr<Peer> Ptr;
-
         Peer();
         virtual ~Peer();
 
