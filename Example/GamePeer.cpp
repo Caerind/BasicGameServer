@@ -1,4 +1,5 @@
 #include "GamePeer.hpp"
+#include "GameServer.hpp"
 #include "../Source/Server.hpp"
 
 GamePeer::GamePeer()
@@ -11,8 +12,9 @@ GamePeer::~GamePeer()
     disconnect();
 }
 
-bool GamePeer::connect(Server<GamePeer>& server)
+bool GamePeer::connect(GameServer& server)
 {
+    std::cout << "t" << std::endl;
     if (!isConnected())
     {
         sf::Packet packet;
@@ -20,15 +22,18 @@ bool GamePeer::connect(Server<GamePeer>& server)
         {
             sf::Int32 packetType;
             packet >> packetType;
-            /*if (packetType == Packet::Type::Login)
+            // TODO : Change
+            if (packetType == Packet::Type::Login)
             {
                 sf::IpAddress ip = getSocketIn().getRemoteAddress();
                 std::string username, password;
                 sf::Uint32 port;
+                // TODO : Change
                 Packet::readLoginPacket(packet,username,password,port);
 
                 // Test login AND isn't ban AND isn't banip
                 // Test login in a db
+                // TODO : Change
                 if (true && !server.isBanned(username) && !server.isBannedIp(ip) && !server.isConnected(username))
                 {
                     if (getSocketOut().connect(ip,port,getTimeout()) == sf::Socket::Status::Done)
@@ -37,7 +42,7 @@ bool GamePeer::connect(Server<GamePeer>& server)
                         return Connection::connect();
                     }
                 }
-            }*/
+            }
         }
     }
     return isConnected();

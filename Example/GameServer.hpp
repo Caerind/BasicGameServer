@@ -18,7 +18,7 @@ class GameServer : public Server<GamePeer>
         void stop();
 
         // Settings
-        void loadSettings();
+        bool loadSettings();
         void saveSettings();
         void createSettings();
 
@@ -45,8 +45,8 @@ class GameServer : public Server<GamePeer>
         void kick(std::string const& username, std::string const& reason = "");
 
     protected:
-        void initCommands();
         void initPacketResponses();
+        void initCommands();
 
         void onConnection(GamePeer& peer);
         void onDisconnection(GamePeer& peer);

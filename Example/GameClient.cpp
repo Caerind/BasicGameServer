@@ -4,6 +4,7 @@ GameClient::GameClient()
 : Client()
 {
     setTimeout(sf::seconds(3.f));
+    // TODO : Change
     // initPacketResponses();
 }
 
@@ -29,11 +30,9 @@ bool GameClient::connect(sf::IpAddress const& ip, sf::Uint32 port, std::string c
 
             if (retry > 0)
             {
+                // TODO : Change
                 sf::Packet packet;
-
-                // Create Login Packet
-                //Packet::createLoginPacket(packet,username,password,port);
-
+                Packet::createLoginPacket(packet,username,password,port);
                 if (getSocketOut().send(packet) == sf::Socket::Done)
                 {
                     if (listener.accept(getSocketIn()) == sf::Socket::Done)
@@ -55,11 +54,9 @@ void GameClient::disconnect(bool sendPacket)
     {
         if (sendPacket)
         {
+            // TODO : Change
             sf::Packet packet;
-
-            // Create Disconnection Packet
-            //Packet::createDisconnectPacket(packet);
-
+            Packet::createDisconnectPacket(packet);
             send(packet);
         }
 
@@ -76,20 +73,16 @@ void GameClient::handleChat()
         std::string input;
         std::getline(std::cin, input);
 
-        // Handle Chat
-
-        /*
-
+        // TODO : Change
         if (input == "stop" || !isConnected())
         {
             break;
         }
 
+        // TODO : Change
         sf::Packet packet;
         Packet::createClientMessagePacket(packet,Message(getUsername(),input));
         send(packet);
-
-        */
     }
 }
 

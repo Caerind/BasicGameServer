@@ -3,11 +3,6 @@
 namespace Packet
 {
 
-void createNonePacket(sf::Packet& packet)
-{
-    packet << Packet::Type::None;
-}
-
 void createClientJoinedPacket(sf::Packet& packet, std::string const& username)
 {
     packet << Packet::Type::ClientJoined << username;

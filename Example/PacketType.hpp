@@ -1,10 +1,13 @@
 #ifndef PACKETTYPE_HPP_INCLUDED
 #define PACKETTYPE_HPP_INCLUDED
 
+// Standards Libs
 #include <string>
 
+// SFML Network
 #include <SFML/Network/Packet.hpp>
 
+// Own files
 #include "Message.hpp"
 
 namespace Packet
@@ -27,9 +30,6 @@ enum Type
     ClientMessage,
 
 };
-
-// None
-void createNonePacket(sf::Packet& packet);
 
 // ClientJoined
 void createClientJoinedPacket(sf::Packet& packet, std::string const& username);

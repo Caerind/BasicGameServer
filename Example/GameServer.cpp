@@ -10,7 +10,17 @@ void GameServer::load()
     Server::load(); // Default values
 
     // You can load your settings from the opened settings file here
-    // Settings
+    // TODO : Changes
+    if (!loadSettings())
+    {
+        createSettings();
+        saveSettings();
+    }
+
+    loadFromFile();
+
+    initCommands();
+    initPacketResponses();
 
     // Display settings
 	write("[Server] Server Version 0.1.1");
@@ -22,6 +32,9 @@ void GameServer::load()
 void GameServer::start()
 {
     Server::start(); // Only to show that you can customize it
+
+    saveToFile();
+    saveSettings();
 }
 
 void GameServer::stop()
@@ -29,9 +42,9 @@ void GameServer::stop()
     Server::stop(); // Only to show that you can customize it
 }
 
-void GameServer::loadSettings()
+bool GameServer::loadSettings()
 {
-    // Nothing atm
+    return false;
 }
 
 void GameServer::saveSettings()
@@ -148,12 +161,14 @@ void GameServer::ban(std::string const& username, std::string const& reason)
         if (isConnected(username))
         {
             sf::Packet packet;
+            // TODO : Changes
             Packet::createBannedPacket(packet,Message("", "You have been banned" + s));
             sendToPeer(packet,username);
         }
 
         // Tell everyone he has been banned
         sf::Packet packet;
+        // TODO : Changes
         Packet::createServerMessagePacket(packet,Message("", username + " has been banned" + s));
         sendToAll(packet,username);
 
@@ -199,11 +214,13 @@ void GameServer::banIp(sf::IpAddress const& ip, std::string const& reason)
 
         // Tell the user he has been banned
         sf::Packet packet;
+        // TODO : Changes
         Packet::createBannedPacket(packet,Message("", "Your IP (" + ip.toString() + ") has been banned" + s));
         sendToIp(packet,ip);
 
         // Tell everyone ip has been banned
         packet.clear();
+        // TODO : Changes
         Packet::createServerMessagePacket(packet,Message("", "IP (" + ip.toString() + ") has been banned" + s));
         sendToAll(packet);
 
@@ -235,6 +252,7 @@ void GameServer::kick(std::string const& username, std::string const& reason)
 
         // Kick him
         sf::Packet packet;
+        // TODO : Changes
         Packet::createKickedPacket(packet, Message("", "You have been kicked" + s));
         for (std::size_t i = 0; i < mPeers.size(); i++)
         {
@@ -247,6 +265,7 @@ void GameServer::kick(std::string const& username, std::string const& reason)
 
         // Send to all
         packet.clear();
+        // TODO : Changes
         Packet::createServerMessagePacket(packet, Message("", username + " has been kicked" + s));
         sendToAll(packet,username);
 
@@ -254,74 +273,22 @@ void GameServer::kick(std::string const& username, std::string const& reason)
     }
 }
 
-void GameServer::initCommands()
-{
-    // Add your commands
-}
-
 void GameServer::initPacketResponses()
 {
-    // Add your packets
-}
-
-void GameServer::onConnection(GamePeer& peer)
-{
-    Server<GamePeer>::onConnection(peer); // Only to show that you can customize it
-
-    std::string username = peer.getUsername();
-
-    sf::Packet packet;
-    //Packet::createClientJoinedPacket(packet,username);
-    sendToAll(packet);
-
-    write("[Server] " + username + " joined the game");
-}
-
-void GameServer::onDisconnection(GamePeer& peer)
-{
-    Server<GamePeer>::onDisconnection(peer); // Only to show that you can customize it
-
-    std::string username = peer.getUsername();
-
-    sf::Packet packet;
-    //Packet::createClientLeftPacket(packet,username);
-    sendToAll(packet);
-
-    write("[Server] " + username + " left the game");
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/*
-void Server::initPacketResponses()
-{
-    mPacketResponses[Packet::Type::None] = [&](sf::Packet& packet, Peer& peer)
+    mPacketResponses[Packet::Type::None] = [&](sf::Packet& packet, GamePeer& peer)
     {
     };
 
-    mPacketResponses[Packet::Type::Login] = [&](sf::Packet& packet, Peer& peer)
+    mPacketResponses[Packet::Type::Login] = [&](sf::Packet& packet, GamePeer& peer)
     {
     };
 
-    mPacketResponses[Packet::Type::Disconnect] = [&](sf::Packet& packet, Peer& peer)
+    mPacketResponses[Packet::Type::Disconnect] = [&](sf::Packet& packet, GamePeer& peer)
     {
         peer.remove();
     };
 
-    mPacketResponses[Packet::Type::ClientMessage] = [&](sf::Packet& packet, Peer& peer)
+    mPacketResponses[Packet::Type::ClientMessage] = [&](sf::Packet& packet, GamePeer& peer)
     {
         Message msg;
         Packet::readClientMessagePacket(packet,msg);
@@ -345,15 +312,14 @@ void Server::initPacketResponses()
     };
 }
 
-void Server::initCommands()
+void GameServer::initCommands()
 {
-    mCommands["stop"] = Command("stop",[&](std::string const& args) -> std::string
+    mCommands["stop"] = Command("stop",[&](std::string const& args)
     {
         stop();
-        return "";
     });
 
-    mCommands["help"] = Command("help",[&](std::string const& args) -> std::string
+    mCommands["help"] = Command("help",[&](std::string const& args)
     {
         write("[Server] help : Display the list of commands");
         write("[Server] stop : Stop the server");
@@ -364,21 +330,20 @@ void Server::initCommands()
         write("[Server] unbanip : Unban an ip address");
         write("[Server] op : Promote an user to admin rank");
         write("[Server] deop : Demote an user from admin rank");
-        return std::string("/help : Display the list of commands\n/say : Say something\n/me : Describe");
+        // TODO : send packet
+        //return std::string("/help : Display the list of commands\n/say : Say something\n/me : Describe");
     },false);
 
-    mCommands["say"] = Command("say",[&](std::string const& args) -> std::string
+    mCommands["say"] = Command("say",[&](std::string const& args)
     {
         write("[Server] : " + args);
 
         sf::Packet packet;
         Packet::createServerMessagePacket(packet, Message("[Server]",args));
         sendToAll(packet);
-
-        return "";
     });
 
-    mCommands["ban"] = Command("ban",[&](std::string const& args) -> std::string
+    mCommands["ban"] = Command("ban",[&](std::string const& args)
     {
         auto a = Command::splitArguments(args);
         if (a.size() >= 1)
@@ -390,10 +355,9 @@ void Server::initCommands()
             }
             ban(a[0],r);
         }
-        return "";
     });
 
-    mCommands["banip"] = Command("banip",[&](std::string const& args) -> std::string
+    mCommands["banip"] = Command("banip",[&](std::string const& args)
     {
         auto a = Command::splitArguments(args);
         if (a.size() >= 1)
@@ -411,50 +375,45 @@ void Server::initCommands()
                 }
             }
         }
-        return "";
     });
 
-    mCommands["unban"] = Command("unban",[&](std::string const& args) -> std::string
+    mCommands["unban"] = Command("unban",[&](std::string const& args)
     {
         auto a = Command::splitArguments(args);
         if (a.size() >= 1)
         {
             unban(a[0]);
         }
-        return "";
     });
 
-    mCommands["unbanip"] = Command("unbanip",[&](std::string const& args) -> std::string
+    mCommands["unbanip"] = Command("unbanip",[&](std::string const& args)
     {
         auto a = Command::splitArguments(args);
         if (a.size() >= 1)
         {
             unbanIp(sf::IpAddress(a[0]));
         }
-        return "";
     });
 
-    mCommands["op"] = Command("op",[&](std::string const& args) -> std::string
+    mCommands["op"] = Command("op",[&](std::string const& args)
     {
         auto a = Command::splitArguments(args);
         if (a.size() >= 1)
         {
             addAdmin(a[0]);
         }
-        return "";
     });
 
-    mCommands["deop"] = Command("deop",[&](std::string const& args) -> std::string
+    mCommands["deop"] = Command("deop",[&](std::string const& args)
     {
         auto a = Command::splitArguments(args);
         if (a.size() >= 1)
         {
             removeAdmin(a[0]);
         }
-        return "";
     });
 
-    mCommands["kick"] = Command("kick",[&](std::string const& args) -> std::string
+    mCommands["kick"] = Command("kick",[&](std::string const& args)
     {
         auto a = Command::splitArguments(args);
         if (a.size() >= 1)
@@ -466,18 +425,42 @@ void Server::initCommands()
             }
             kick(a[0],r);
         }
-        return "";
     });
 
-    mCommands["me"] = Command("me",[&](std::string const& args) -> std::string
+    mCommands["me"] = Command("me",[&](std::string const& args)
     {
         write("[Server] : *" + args);
 
         sf::Packet packet;
         Packet::createServerMessagePacket(packet, Message("", "*" + args));
         sendToAll(packet);
-
-        return "";
     },false);
 }
-*/
+
+void GameServer::onConnection(GamePeer& peer)
+{
+    Server<GamePeer>::onConnection(peer); // Only to show that you can customize it
+
+    std::string username = peer.getUsername();
+
+    sf::Packet packet;
+    // TODO : Changes
+    Packet::createClientJoinedPacket(packet,username);
+    sendToAll(packet);
+
+    write("[Server] " + username + " joined the game");
+}
+
+void GameServer::onDisconnection(GamePeer& peer)
+{
+    Server<GamePeer>::onDisconnection(peer); // Only to show that you can customize it
+
+    std::string username = peer.getUsername();
+
+    sf::Packet packet;
+    // TODO : Changes
+    Packet::createClientLeftPacket(packet,username);
+    sendToAll(packet);
+
+    write("[Server] " + username + " left the game");
+}

@@ -1,11 +1,13 @@
 #ifndef MESSAGE_HPP
 #define MESSAGE_HPP
 
+// Standards Libs
 #include <ctime>
 #include <iostream>
 #include <sstream>
 #include <string>
 
+// SFML Network
 #include <SFML/Network/Packet.hpp>
 
 class Message

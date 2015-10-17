@@ -10,6 +10,7 @@
 
 // Own files
 #include "../Source/Client.hpp"
+#include "PacketType.hpp"
 
 class GameClient : public Client
 {
