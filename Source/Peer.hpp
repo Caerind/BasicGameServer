@@ -4,17 +4,13 @@
 // Own files
 #include "Connection.hpp"
 
-// Template Declaration
-template <typename T>
-class Server;
-
 class Peer : public Connection
 {
     public:
         Peer();
         virtual ~Peer();
 
-        virtual bool connect(Server<Peer>& server);
+        virtual bool connect();
 
         void remove();
         bool needRemove() const;

@@ -12,6 +12,7 @@ class Command
     public:
         typedef std::function<void(const std::string&)> Function;
 
+        Command();
         Command(std::string const& name, Function func, bool adminOnly = true);
 
         std::string getName() const;

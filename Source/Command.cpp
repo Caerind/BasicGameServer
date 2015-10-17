@@ -1,5 +1,9 @@
 #include "Command.hpp"
 
+Command::Command()
+{
+}
+
 Command::Command(std::string const& name, Command::Function func, bool adminOnly)
 : mName(name)
 , mFunction(func)

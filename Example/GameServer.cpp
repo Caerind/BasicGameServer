@@ -32,14 +32,14 @@ void GameServer::load()
 void GameServer::start()
 {
     Server::start(); // Only to show that you can customize it
-
-    saveToFile();
-    saveSettings();
 }
 
 void GameServer::stop()
 {
     Server::stop(); // Only to show that you can customize it
+
+    saveToFile();
+    saveSettings();
 }
 
 bool GameServer::loadSettings()

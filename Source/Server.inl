@@ -11,18 +11,8 @@ Server<T>::Server(std::string const& logFile)
 , mPort(4567)
 , mUpdateInterval(sf::seconds(1.f/60.f))
 {
-    sf::Clock clock;
-
-    write("[Server] Loading server");
-
     mListener.setBlocking(false);
 	mPeers[0].reset(new T());
-
-    load();
-
-    std::ostringstream oss;
-    oss << clock.restart().asSeconds();
-    write("[Server] Loaded in " + oss.str() + "s !");
 }
 
 template <typename T>
@@ -39,6 +29,15 @@ void Server<T>::load()
 template <typename T>
 void Server<T>::start()
 {
+    sf::Clock clock;
+    write("[Server] Loading server");
+
+    load();
+
+    std::ostringstream oss;
+    oss << clock.restart().asSeconds();
+    write("[Server] Loaded in " + oss.str() + "s !");
+
     mRunning = true;
     mThread.launch();
 
@@ -281,7 +280,7 @@ void Server<T>::handleConnections()
 
 	if (mListener.accept(mPeers[mConnectedPlayers]->getSocketIn()) == sf::TcpListener::Done)
 	{
-		if (mPeers[mConnectedPlayers]->connect(*this))
+		if (mPeers[mConnectedPlayers]->connect())
         {
             onConnection(*mPeers[mConnectedPlayers]);
 

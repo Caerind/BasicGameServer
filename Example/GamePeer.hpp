@@ -17,7 +17,7 @@ class GamePeer : public Peer
         GamePeer();
         virtual ~GamePeer();
 
-        virtual bool connect(GameServer& server);
+        virtual bool connect();
 
         std::string getUsername() const;
 

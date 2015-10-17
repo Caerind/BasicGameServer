@@ -1,6 +1,4 @@
 #include "Peer.hpp"
-#include "Server.hpp"
-
 Peer::Peer()
 : mRemove(false)
 {
@@ -11,7 +9,7 @@ Peer::~Peer()
     disconnect();
 }
 
-bool Peer::connect(Server<Peer>& server)
+bool Peer::connect()
 {
     return isConnected();
 }

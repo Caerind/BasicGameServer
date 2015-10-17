@@ -12,9 +12,8 @@ GamePeer::~GamePeer()
     disconnect();
 }
 
-bool GamePeer::connect(GameServer& server)
+bool GamePeer::connect()
 {
-    std::cout << "t" << std::endl;
     if (!isConnected())
     {
         sf::Packet packet;
@@ -34,7 +33,8 @@ bool GamePeer::connect(GameServer& server)
                 // Test login AND isn't ban AND isn't banip
                 // Test login in a db
                 // TODO : Change
-                if (true && !server.isBanned(username) && !server.isBannedIp(ip) && !server.isConnected(username))
+                //if (true && !server.isBanned(username) && !server.isBannedIp(ip) && !server.isConnected(username))
+                if (true)
                 {
                     if (getSocketOut().connect(ip,port,getTimeout()) == sf::Socket::Status::Done)
                     {
