@@ -16,11 +16,11 @@ std::string Command::getName() const
     return mName;
 }
 
-void Command::execute(std::string const& args)
+void Command::execute(std::string const& args, std::string const& executant, bool isServer)
 {
     if (mFunction)
     {
-        mFunction(args);
+        mFunction(args,executant,isServer);
     }
 }
 

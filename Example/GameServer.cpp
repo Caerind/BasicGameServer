@@ -314,27 +314,35 @@ void GameServer::initPacketResponses()
 
 void GameServer::initCommands()
 {
-    mCommands["stop"] = Command("stop",[&](std::string const& args)
+    mCommands["stop"] = Command("stop",[&](std::string const& args, std::string const& executant, bool isServer)
     {
         stop();
     });
 
-    mCommands["help"] = Command("help",[&](std::string const& args)
+    mCommands["help"] = Command("help",[&](std::string const& args, std::string const& executant, bool isServer)
     {
-        write("[Server] help : Display the list of commands");
-        write("[Server] stop : Stop the server");
-        write("[Server] say : Say something");
-        write("[Server] ban : Ban an username");
-        write("[Server] unban : Unban an username");
-        write("[Server] banip : Ban an ip address");
-        write("[Server] unbanip : Unban an ip address");
-        write("[Server] op : Promote an user to admin rank");
-        write("[Server] deop : Demote an user from admin rank");
-        // TODO : send packet
-        //return std::string("/help : Display the list of commands\n/say : Say something\n/me : Describe");
+        if (isServer)
+        {
+            write("[Server] help : Display the list of commands");
+            write("[Server] stop : Stop the server");
+            write("[Server] say : Say something");
+            write("[Server] ban : Ban an username");
+            write("[Server] unban : Unban an username");
+            write("[Server] banip : Ban an ip address");
+            write("[Server] unbanip : Unban an ip address");
+            write("[Server] op : Promote an user to admin rank");
+            write("[Server] deop : Demote an user from admin rank");
+        }
+        else
+        {
+            std::string str = "/help : Display the list of commands\n/say : Say something\n/me : Describe";
+            sf::Packet packet;
+            Packet::createServerMessagePacket(packet,Message("[Server]",str));
+            sendToPeer(packet,executant);
+        }
     },false);
 
-    mCommands["say"] = Command("say",[&](std::string const& args)
+    mCommands["say"] = Command("say",[&](std::string const& args, std::string const& executant, bool isServer)
     {
         write("[Server] : " + args);
 
@@ -343,7 +351,7 @@ void GameServer::initCommands()
         sendToAll(packet);
     });
 
-    mCommands["ban"] = Command("ban",[&](std::string const& args)
+    mCommands["ban"] = Command("ban",[&](std::string const& args, std::string const& executant, bool isServer)
     {
         auto a = Command::splitArguments(args);
         if (a.size() >= 1)
@@ -357,7 +365,7 @@ void GameServer::initCommands()
         }
     });
 
-    mCommands["banip"] = Command("banip",[&](std::string const& args)
+    mCommands["banip"] = Command("banip",[&](std::string const& args, std::string const& executant, bool isServer)
     {
         auto a = Command::splitArguments(args);
         if (a.size() >= 1)
@@ -377,7 +385,7 @@ void GameServer::initCommands()
         }
     });
 
-    mCommands["unban"] = Command("unban",[&](std::string const& args)
+    mCommands["unban"] = Command("unban",[&](std::string const& args, std::string const& executant, bool isServer)
     {
         auto a = Command::splitArguments(args);
         if (a.size() >= 1)
@@ -386,7 +394,7 @@ void GameServer::initCommands()
         }
     });
 
-    mCommands["unbanip"] = Command("unbanip",[&](std::string const& args)
+    mCommands["unbanip"] = Command("unbanip",[&](std::string const& args, std::string const& executant, bool isServer)
     {
         auto a = Command::splitArguments(args);
         if (a.size() >= 1)
@@ -395,7 +403,7 @@ void GameServer::initCommands()
         }
     });
 
-    mCommands["op"] = Command("op",[&](std::string const& args)
+    mCommands["op"] = Command("op",[&](std::string const& args, std::string const& executant, bool isServer)
     {
         auto a = Command::splitArguments(args);
         if (a.size() >= 1)
@@ -404,7 +412,7 @@ void GameServer::initCommands()
         }
     });
 
-    mCommands["deop"] = Command("deop",[&](std::string const& args)
+    mCommands["deop"] = Command("deop",[&](std::string const& args, std::string const& executant, bool isServer)
     {
         auto a = Command::splitArguments(args);
         if (a.size() >= 1)
@@ -413,7 +421,7 @@ void GameServer::initCommands()
         }
     });
 
-    mCommands["kick"] = Command("kick",[&](std::string const& args)
+    mCommands["kick"] = Command("kick",[&](std::string const& args, std::string const& executant, bool isServer)
     {
         auto a = Command::splitArguments(args);
         if (a.size() >= 1)
@@ -427,7 +435,7 @@ void GameServer::initCommands()
         }
     });
 
-    mCommands["me"] = Command("me",[&](std::string const& args)
+    mCommands["me"] = Command("me",[&](std::string const& args, std::string const& executant, bool isServer)
     {
         write("[Server] : *" + args);
 

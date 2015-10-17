@@ -10,13 +10,13 @@
 class Command
 {
     public:
-        typedef std::function<void(const std::string&)> Function;
+        typedef std::function<void(const std::string&,const std::string&,bool)> Function;
 
         Command();
         Command(std::string const& name, Function func, bool adminOnly = true);
 
         std::string getName() const;
-        void execute(std::string const& args);
+        void execute(std::string const& args, std::string const& executant, bool isServer);
         bool isAdminOnly() const;
 
         static std::vector<std::string> getCommandName(std::string const& command);

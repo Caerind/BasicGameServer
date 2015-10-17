@@ -151,7 +151,7 @@ std::string Server<T>::handleCommand(std::string const& command, bool server, st
         {
             if (server || !itr->second.isAdminOnly())
             {
-                itr->second.execute(args[1]);
+                itr->second.execute(args[1],username,server);
             }
             else
             {
