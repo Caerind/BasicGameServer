@@ -1,11 +1,14 @@
-#ifndef COMMAND_HPP
-#define COMMAND_HPP
+#ifndef ON_COMMAND_HPP
+#define ON_COMMAND_HPP
 
 // Standards Libs
 #include <functional>
 #include <sstream>
 #include <string>
 #include <vector>
+
+namespace on
+{
 
 class Command
 {
@@ -28,4 +31,6 @@ class Command
         bool mAdminOnly;
 };
 
-#endif // COMMAND_HPP
+} // namespace on
+
+#endif // ON_COMMAND_HPP

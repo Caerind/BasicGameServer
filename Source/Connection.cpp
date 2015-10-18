@@ -1,5 +1,8 @@
 #include "Connection.hpp"
 
+namespace on
+{
+
 sf::Uint32 Connection::mNumberOfCreations = 0;
 
 Connection::Connection()
@@ -162,3 +165,5 @@ sf::Time Connection::getTimeout() const
 {
     return mTimeout;
 }
+
+} // namespace on

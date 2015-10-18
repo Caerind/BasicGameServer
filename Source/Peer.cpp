@@ -1,7 +1,12 @@
 #include "Peer.hpp"
+
+namespace on
+{
+
 Peer::Peer()
 : mRemove(false)
 {
+    setTimeout(sf::seconds(3.f));
 }
 
 Peer::~Peer()
@@ -28,3 +33,10 @@ sf::IpAddress Peer::getRemoteAddress()
 {
     return getSocketIn().getRemoteAddress();
 }
+
+std::string Peer::getUsername() const
+{
+    return mUsername;
+}
+
+} // namespace on

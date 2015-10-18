@@ -1,5 +1,5 @@
-#ifndef CONNECTION_HPP
-#define CONNECTION_HPP
+#ifndef ON_CONNECTION_HPP
+#define ON_CONNECTION_HPP
 
 // Standards Libs
 #include <queue>
@@ -16,6 +16,9 @@
 #include <SFML/System/Mutex.hpp>
 #include <SFML/System/Thread.hpp>
 #include <SFML/System/Time.hpp>
+
+namespace on
+{
 
 class Connection
 {
@@ -63,4 +66,6 @@ class Connection
         sf::Time mTimeout;
 };
 
-#endif // CONNECTION_HPP
+} // namespace on
+
+#endif // ON_CONNECTION_HPP

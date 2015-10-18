@@ -1,5 +1,5 @@
-#ifndef CLIENT_HPP
-#define CLIENT_HPP
+#ifndef ON_CLIENT_HPP
+#define ON_CLIENT_HPP
 
 // Standards Libs
 #include <functional>
@@ -7,6 +7,9 @@
 
 // Own files
 #include "Connection.hpp"
+
+namespace on
+{
 
 class Client : public Connection
 {
@@ -24,4 +27,6 @@ class Client : public Connection
         std::map<sf::Int32,std::function<void(sf::Packet&)>> mPacketResponses;
 };
 
-#endif // CLIENT_HPP
+}
+
+#endif // ON_CLIENT_HPP

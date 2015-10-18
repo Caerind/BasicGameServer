@@ -1,5 +1,5 @@
-#ifndef SERVER_HPP
-#define SERVER_HPP
+#ifndef ON_SERVER_HPP
+#define ON_SERVER_HPP
 
 // Standards Libs
 #include <ctime>
@@ -25,6 +25,10 @@
 // Own files
 #include "Command.hpp"
 #include "Peer.hpp"
+#include "Message.hpp"
+
+namespace on
+{
 
 template <typename T>
 class Server
@@ -93,6 +97,8 @@ class Server
 
 };
 
+} // namespace
+
 #include "Server.inl"
 
-#endif // SERVER_HPP
+#endif // ON_SERVER_HPP

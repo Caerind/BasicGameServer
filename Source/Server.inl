@@ -1,3 +1,6 @@
+namespace on
+{
+
 template <typename T>
 Server<T>::Server(std::string const& logFile)
 : mThread(&Server::run,this)
@@ -29,19 +32,26 @@ void Server<T>::load()
 template <typename T>
 void Server<T>::start()
 {
-    sf::Clock clock;
-    write("[Server] Loading server");
+    if (!mRunning)
+    {
+        sf::Clock clock;
+        write("[Server] Loading server");
 
-    load();
+        load();
 
-    std::ostringstream oss;
-    oss << clock.restart().asSeconds();
-    write("[Server] Loaded in " + oss.str() + "s !");
+        std::ostringstream oss;
+        oss << clock.restart().asSeconds();
+        write("[Server] Loaded in " + oss.str() + "s !");
 
-    mRunning = true;
-    mThread.launch();
+        mRunning = true;
+        mThread.launch();
 
-    write("[Server] Server started !");
+        write("[Server] Server started !");
+    }
+    else
+    {
+        write("[Server] Server is already running");
+    }
 }
 
 template <typename T>
@@ -179,7 +189,7 @@ void Server<T>::write(std::string const& message)
     char buffer[80];
     time(&rawtime);
     timeinfo = localtime(&rawtime);
-    strftime(buffer,80,"[%x][%X] ",timeinfo);
+    strftime(buffer,80,"[%x][%X]",timeinfo);
 
     // Write Message
     std::string str = std::string(buffer) + message + "\n";
@@ -328,3 +338,5 @@ void Server<T>::handleDisconnections()
         }
     }
 }
+
+} // namespace on

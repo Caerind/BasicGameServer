@@ -1,5 +1,8 @@
 #include "Command.hpp"
 
+namespace on
+{
+
 Command::Command()
 {
 }
@@ -57,3 +60,5 @@ std::vector<std::string> Command::splitArguments(std::string const& arguments)
     }
     return args;
 }
+
+} // namespace on

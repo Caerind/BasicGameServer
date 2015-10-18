@@ -1,5 +1,5 @@
-#ifndef MESSAGE_HPP
-#define MESSAGE_HPP
+#ifndef ON_MESSAGE_HPP
+#define ON_MESSAGE_HPP
 
 // Standards Libs
 #include <ctime>
@@ -9,6 +9,9 @@
 
 // SFML Network
 #include <SFML/Network/Packet.hpp>
+
+namespace on
+{
 
 class Message
 {
@@ -54,5 +57,6 @@ T from_string(std::string const& value)
     return v;
 }
 
+} // namespace on
 
-#endif // MESSAGE_HPP
+#endif // ON_MESSAGE_HPP

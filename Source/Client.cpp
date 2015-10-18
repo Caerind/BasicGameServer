@@ -1,8 +1,12 @@
 #include "Client.hpp"
 
+namespace on
+{
+
 Client::Client()
 : mThread(&Client::handlePackets,this)
 {
+    setTimeout(sf::seconds(3.f));
 }
 
 Client::~Client()
@@ -33,3 +37,5 @@ sf::IpAddress Client::getRemoteAddress()
 {
     return getSocketOut().getRemoteAddress();
 }
+
+} // namespace on

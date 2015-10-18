@@ -1,5 +1,8 @@
 #include "Message.hpp"
 
+namespace on
+{
+
 Message::Message()
 {
     setActualTime();
@@ -81,3 +84,4 @@ sf::Packet& operator >>(sf::Packet& packet, Message& msg)
     return packet;
 }
 
+} // namespace on
